@@ -1,3 +1,8 @@
-<h1> Tree Shade </h1>
+# TreeShade
 
-Assets management and workflow coordinating and collaborating. Javascript Startup Script extension for Bridge and CEP extension for InDesign. And Node.js app Run on Mac OS and on Windows.
+TreeShade is a tool to auto-generate designs and manage content using Adobe Bridge and InDesign.
+
+## Features
+- Local server for content management
+- Integration with Adobe tools
+- Easy content editing and design automation
