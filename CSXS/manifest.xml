@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ExtensionManifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ExtensionBundleId="com.treeshade" ExtensionBundleVersion="9.3.6" Version="7.0"> <!-- MAJOR-VERSION-UPDATE-MARKER -->
+    <ExtensionList>
+        <Extension Id="treeshade" Version="9.3.6"/>  
+			
+    </ExtensionList>
+    <ExecutionEnvironment>
+        <HostList>
+            <Host Name="KBRG" Version="[8.0,15.9]" />
+            <Host Name="IDSN" Version="[12.1,20.9]" />
+        </HostList>
+        <LocaleList>
+            <Locale Code="All"/>
+        </LocaleList>
+        <RequiredRuntimeList>
+            <RequiredRuntime Name="CSXS" Version="7.0"/> <!-- MAJOR-VERSION-UPDATE-MARKER -->
+        </RequiredRuntimeList>
+    </ExecutionEnvironment>
+    <DispatchInfoList>      
+        <Extension Id="treeshade">
+            <DispatchInfo>
+                <Resources>
+                    <MainPath>./html/index.html</MainPath>
+                    <ScriptPath>./jsx/core.jsx</ScriptPath>
+                </Resources>
+                <Lifecycle>
+                    <AutoVisible>true</AutoVisible>
+                </Lifecycle>
+                <UI>
+                    <Type>Embedded</Type>
+                    <Menu>Tree Shade</Menu>
+                    <Geometry>
+                        <Size>
+                            <Height>300</Height>
+                            <Width>250</Width>
+                        </Size>
+                        <MaxSize>
+                            <Height>800</Height>
+                            <Width>1200</Width>
+                        </MaxSize>
+                        <MinSize>
+                            <Height>200</Height>
+                            <Width>100</Width>
+                        </MinSize>
+                    </Geometry>
+                </UI>
+            </DispatchInfo>
+        </Extension>
+   
+    </DispatchInfoList>
+</ExtensionManifest>
