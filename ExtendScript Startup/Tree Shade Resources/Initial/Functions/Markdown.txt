@@ -1,0 +1,88 @@
+function parse(input, level, lang, outputPath) {
+  const fs = require('fs');
+  const lines = input.split('\n');
+  const html = [];
+  const listStack = []; // true stack: [{type: 'ul'|'ol', depth: number}]
+
+  const wrapSpan = (text, lang) => '<span class="lang ' + lang + '">' + text + '</span>';
+  const applyFormatting = (text) => {
+    return text
+      .replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>')
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+  };
+  const closeListsToDepth = (currentDepth) => {
+    while (listStack.length > 0 && listStack[listStack.length - 1].depth >= currentDepth) {
+      const tag = listStack.pop().type;
+      html.push(`</${tag}>`);
+    }
+  };
+
+  const closeAllLists = () => {
+    while (listStack.length > 0) {
+      const tag = listStack.pop().type;
+      html.push(`</${tag}>`);
+    }
+  };
+
+  for (let rawLine of lines) {
+    const line = rawLine.replace(/\r/g, '');
+    const leadingSpaces = line.match(/^\s*/)[0].length;
+    const depth = Math.floor(leadingSpaces / 2);
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      closeListsToDepth(0);
+      continue;
+    }
+
+    const headingMatch = trimmed.match(/^(#{1,6})\s+(.*)/);
+    if (headingMatch) {
+      closeAllLists();
+      const hLevel = Math.min(6, headingMatch[1].length + parseInt(level - 1));
+      html.push(`<h${hLevel}>${wrapSpan(applyFormatting(headingMatch[2]), lang)}</h${hLevel}>`);
+      continue;
+    }
+
+    const orderedMatch = trimmed.match(/^(\d+)\.\s+(.*)/);
+    if (orderedMatch) {
+      if (
+        listStack.length === 0 ||
+        listStack[listStack.length - 1].type !== 'ol' ||
+        listStack[listStack.length - 1].depth !== depth
+      ) {
+        closeListsToDepth(depth);
+        html.push('<ol>');
+        listStack.push({ type: 'ol', depth });
+      }
+      html.push(`<li>${wrapSpan(applyFormatting(orderedMatch[2]), lang)}</li>`);
+      continue;
+    }
+
+    const unorderedMatch = trimmed.match(/^[-+*]\s+(.*)/);
+    if (unorderedMatch) {
+      if (
+        listStack.length === 0 ||
+        listStack[listStack.length - 1].type !== 'ul' ||
+        listStack[listStack.length - 1].depth !== depth
+      ) {
+        closeListsToDepth(depth);
+        html.push('<ul>');
+        listStack.push({ type: 'ul', depth });
+      }
+      html.push(`<li>${wrapSpan(applyFormatting(unorderedMatch[1]), lang)}</li>`);
+      continue;
+    }
+
+    closeAllLists();
+
+    html.push(`<p>${wrapSpan(applyFormatting(trimmed), lang)}</p>`);
+  }
+
+  closeAllLists();
+
+  fs.writeFile(outputPath, html.join('\n'), 'utf8', err => {
+    if (err) console.error(err);
+  });
+}

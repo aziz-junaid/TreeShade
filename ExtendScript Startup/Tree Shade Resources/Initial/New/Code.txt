@@ -1,0 +1,7 @@
+::./<FN>/C*:Place:\r::Caption:For1 Para::Code:For2 Para:
+<div class="code w3-panel w3-card w3-light-grey" id="code_<fh>" data-fi="<fi>">
+  <h4><ts>./<FN>/Caption.+<Place></ts></h4>
+  <div class="w3-code notranslate">
+    <ts><id#this/\r?\n><Row><br></ts><ts><id_this>./<FN>/Content.+<Place></ts>
+  </div>
+</div>

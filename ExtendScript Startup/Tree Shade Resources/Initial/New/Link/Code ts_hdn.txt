@@ -1,0 +1,51 @@
+//Code
+mainFunction();
+
+function mainFunction() {
+    try {
+        if (!frame || !(frame instanceof TextFrame)) {
+            return;
+        }
+        var urlFile = File(file.fsName.replace(/Code ts_hdn\.txt$/, "URL ts_cls_l6_m6.txt"));
+        if (!urlFile.exists) {
+            return;
+        }
+        var url = readFile(urlFile);
+        var hyperlinkName = frame.id + "_" + file.parent.name;
+        var hyperlinkDestName = "URL_" + file.parent.name;
+        var hyperlinkURLDest = doc.hyperlinkURLDestinations.itemByName(hyperlinkDestName);
+        if (!hyperlinkURLDest.isValid) {
+            hyperlinkURLDest = doc.hyperlinkURLDestinations.add({ name: hyperlinkDestName, destinationURL: url });
+        } else {
+            hyperlinkURLDest.destinationURL = url;
+        }
+        var hyperlinkSource = doc.hyperlinkPageItemSources.itemByName(hyperlinkName);
+        if (!hyperlinkSource.isValid) {
+            hyperlinkSource = doc.hyperlinkPageItemSources.add({ name: hyperlinkName, sourcePageItem: frame });
+        }
+        var targetHyperlink = doc.hyperlinks.itemByName(hyperlinkName);
+        if (!targetHyperlink.isValid) {
+            doc.hyperlinks.add({ name: hyperlinkName, source: hyperlinkSource, destination: hyperlinkURLDest });
+        } else {
+            targetHyperlink.source = hyperlinkSource;
+            targetHyperlink.destination = hyperlinkURLDest;
+        }
+    } catch (err) {}
+}
+
+function readFile (targetFile) {
+    var content = "";
+    if (targetFile.exists) {
+        try {
+            targetFile.open ("read");
+            content = targetFile.read();
+            targetFile.close ();
+        }
+        catch (e) {return false}
+        content = content.replace (/\r\n/g, "\n");
+        return content;
+    }
+    else {
+        return false;
+    }
+}

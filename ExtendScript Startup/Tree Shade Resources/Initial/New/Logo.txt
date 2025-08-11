@@ -1,0 +1,4 @@
+::./<FN>/To*::LogoLocation<asm><bo>LogoLocation:Para::LogoImage<asm><bo>LogoImage:Obj::20:Relative Width:
+<div class="logoItem" data-fi="<fi>">
+<img src="<ts>./<FN>/To.+<url></ts>" style="width:100%">
+</div>

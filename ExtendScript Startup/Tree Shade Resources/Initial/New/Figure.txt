@@ -1,0 +1,5 @@
+::./<FN>/*ts_cls*:Place:\r::30%:Relative Width::Figure Image:Obj:
+<div class="figure w3-section" data-fi="<fi>">
+<div class="image"><img src="<ts>./<FN>/Image.+<url></ts>" style="width:100%"></div>
+<div class="caption w3-text-gray"><ts>./<FN>/Caption.+<Place></ts></div>
+</div>

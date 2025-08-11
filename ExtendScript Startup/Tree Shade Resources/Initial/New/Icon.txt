@@ -1,0 +1,4 @@
+::./<FN>/To*::30%:Relative Width::IconImage<asm><bo>IconImage:Obj::IconLocation<asm><bo>IconLocation:Para:
+<div class="iconItem" data-fi="<fi>">
+<img src="<ts>./<FN>/To.+<url></ts>" style="width:100%">
+</div>

@@ -1,0 +1,9 @@
+::./<FN>/*<ASM>*:Place:\r::Indentbar<ASM><BO>Indentbar:Para:
+<div class="indentbar w3-container w3-sand w3-leftbar" id="indentbar_<fh>" data-fi="<fi>">
+    <span class="lang en">
+        <ts><id#en/\r?\n><p><row></p></ts><ts><id_en>./<FN>/.+hdn_en.+<Place></ts>
+    </span>
+    <span class="lang ar">
+        <ts><id#ar/\r?\n><p><row></p></ts><ts><id_ar>./<FN>/.+hdn_ar.+<Place></ts>
+    </span>
+</div>

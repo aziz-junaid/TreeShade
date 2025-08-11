@@ -1,0 +1,8 @@
+<ts><id_function><RP>/Workshop/Initial/Functions/Markdown.+<Place></ts>
+<ts><id_en-input>./English.+ts_md.+<place></ts>
+<ts><id_ar-input>./Arabic.+ts_md.+<place></ts>
+<ts><id_level><fl></ts>
+<ts><id_en-lang>en</ts>
+<ts><id_ar-lang>ar</ts>
+<ts><id_function><id_en-input><id_level><id_en-lang>./English Output.*\.txt<Function></ts>
+<ts><id_function><id_ar-input><id_level><id_ar-lang>./Arabic Output.*\.txt<Function></ts>

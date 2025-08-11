@@ -1,0 +1,349 @@
+markdownNow ();
+function markdownNow () {
+    var resolvedParas;
+    var sequenceNum = 1;
+    
+    if (paras != null) {
+        resolvedParas = paras;
+    } else if (frame && frame.constructor.name === "TextFrame" && frame.parentStory) {
+        resolvedParas = frame.parentStory.paragraphs.everyItem().getElements();
+    } else {
+        return;
+    }
+    formatMarkdownText();
+    function formatMarkdownText() {        
+        if (!resolvedParas || !resolvedParas.length) {
+            return;
+        }
+        var baseStyle = resolvedParas[0].appliedParagraphStyle.name;
+        var baseFontSize = resolvedParas[0].pointSize;
+        var baseInfo = normalizeBaseStyle(baseStyle);
+        var baseName = baseInfo.base;
+        var styleSuffix = baseInfo.suffix;
+        var prefix = baseName !== "Body" ? baseName + " " : "";
+
+        if (prefix == "") {
+            var frameStyleName = "";
+            if (resolvedParas.length > 0 && resolvedParas[0].parentTextFrames && resolvedParas[0].parentTextFrames.length > 0) {
+                frameStyleName = resolvedParas[0].parentTextFrames[0].appliedObjectStyle.name;
+            }
+            if (frameStyleName) {
+                if (frameStyleName !== "[Basic Text Frame]" && frameStyleName !== "Main") {
+                    prefix = frameStyleName + " ";
+                }
+            }
+        }
+        var fileLevel = 1;
+        for (var h = 1; h <= 6; h++) {
+            var styleName = prefix + "Title" + (h + fileLevel) + styleSuffix;
+            ensureParagraphStyle(doc, styleName, baseStyle, baseFontSize + (6 - h) * 1.5);
+        }
+        ensureParagraphStyle(doc, prefix + "Body" + styleSuffix, baseStyle, baseFontSize);
+        ensureCharacterStyle(doc, prefix + "Bold Italic" + styleSuffix, { fontStyle: "Bold Italic" });
+        ensureCharacterStyle(doc, prefix + "Bold" + styleSuffix, { fontStyle: "Bold" });
+        ensureCharacterStyle(doc, prefix + "Italic" + styleSuffix, { fontStyle: "Italic" });
+        var linkColor = getOrCreateLinkColor(doc);
+        ensureCharacterStyle(doc, prefix + "Link" + styleSuffix, { fillColor: linkColor });
+        ensureCharacterStyle(doc, prefix + "Markdown Symbol", {
+            fillColor: "None",
+            strokeColor: "None",
+            horizontalScale: 1
+        });
+        for (var i = resolvedParas.length - 1; i >= 0; i--) {
+            var para = resolvedParas[i];
+            var noneCharStyle = doc.characterStyles.itemByName("[None]");
+            para.applyCharacterStyle(noneCharStyle, false);
+            var contents = para.contents;
+            var anchorOffset = getAnchorOffset(para);
+            var line = contents.slice(anchorOffset);
+            var match;
+            var leadingSpaces = line.match(/^\s*/)[0].length;
+            var indentLevel = Math.floor(leadingSpaces / 2);
+            var trimmed = line.replace(/^\s+/, '');
+            var styleName = prefix + "Body" + styleSuffix;
+            if ((match = trimmed.match(/^(#{1,6})\s+(.*)/))) {
+                var hLevel = match[1].length + level;
+                hLevel--;
+                styleName = prefix + "Title" + hLevel + styleSuffix;
+                var removeLen = match[0].length - match[2].length;
+                applyMarkdownSymbolStyleRange(para, anchorOffset, anchorOffset + removeLen - 1);
+            } else if ((match = trimmed.match(/^(\d+)\.\s*(.*)/))) {
+                var listLevel = (leadingSpaces === 0 ? 1 : indentLevel + 1) + level;
+                listLevel--;
+                listLevel = listLevel * 2;
+                styleName = prefix + "ListO" + listLevel + styleSuffix;
+                if (styleName.search(/\^$/) == -1) {
+                    styleName += "^";
+                }
+                ensureParagraphStyle(doc, styleName, prefix + "Body" + styleSuffix, baseFontSize, true, "ordered", listLevel);
+                var removeLen = leadingSpaces + (match[0].length - match[2].length);
+                applyMarkdownSymbolStyleRange(para, anchorOffset, anchorOffset + removeLen - 1);
+            } else if ((match = trimmed.match(/^[-*+]\s+(.*)/))) {
+                var listLevel = (leadingSpaces === 0 ? 1 : indentLevel + 1) + level;
+                listLevel--;
+                listLevel = listLevel * 2;
+                styleName = prefix + "ListU" + listLevel + styleSuffix;
+                if (styleName.search(/\^$/) == -1) {
+                    styleName += "^";
+                }
+                ensureParagraphStyle(doc, styleName, prefix + "Body" + styleSuffix, baseFontSize, true, "bullet", listLevel);
+                var removeLen = leadingSpaces + (match[0].length - match[1].length);
+                applyMarkdownSymbolStyleRange(para, anchorOffset, anchorOffset + removeLen - 1);
+            }
+            para.appliedParagraphStyle = doc.paragraphStyles.itemByName(styleName);
+            if (!doc.paragraphStyles.itemByName(styleName).isValid) {
+                continue;
+            }
+            applyCharStyle(para, doc, prefix, /\*\*\*([^*]+)\*\*\*/g, "Bold Italic" + styleSuffix, anchorOffset);
+            applyMarkdownSymbolStyle(para, /\*\*\*([^*]+)\*\*\*/g, 3, 3);
+            applyCharStyle(para, doc, prefix, /\*\*([^*]+)\*\*/g, "Bold" + styleSuffix, anchorOffset);
+            applyMarkdownSymbolStyle(para, /\*\*([^*]+)\*\*/g, 2, 2);
+            applyCharStyle(para, doc, prefix, /\*([^*]+)\*/g, "Italic" + styleSuffix, anchorOffset);
+            applyMarkdownSymbolStyle(para, /\*([^*]+)\*/g, 1, 1);
+            applyLinkStyle(para, doc, prefix, styleSuffix, anchorOffset);
+        }
+    }
+
+    function applyMarkdownSymbolStyleRange(para, startIndex, endIndex) {
+        var style = doc.characterStyles.itemByName("Markdown Symbol");
+        for (var i = startIndex; i <= endIndex; i++) {
+            try {
+                para.characters.item(i).appliedCharacterStyle = style;
+            } catch (e) {
+            }
+        }
+    }
+
+    function applyMarkdownSymbolStyle(para, regex, removeStart, removeEnd) {
+        var text = para.contents;
+        var matches = [];
+        var match;
+        var matchCount = 0;
+        
+        while ((match = regex.exec(text)) !== null) {
+            matchCount++;
+            var full = match[0];
+            var start = text.indexOf(full);
+            if (start !== -1) {
+                matches.push({ start: start, fullLength: full.length });
+            }
+        }
+        
+        for (var i = matches.length - 1; i >= 0; i--) {
+            var m = matches[i];
+            
+            for (var j = 0; j < removeEnd; j++) {
+                try {
+                    para.characters.item(m.start + m.fullLength - 1 - j).appliedCharacterStyle = doc.characterStyles.itemByName("Markdown Symbol");
+                } catch (e) {
+                }
+            }
+            
+            for (var j = 0; j < removeStart; j++) {
+                try {
+                    para.characters.item(m.start + j).appliedCharacterStyle = doc.characterStyles.itemByName("Markdown Symbol");
+                } catch (e) {
+                }
+            }
+        }
+    }
+
+    function normalizeBaseStyle(name) {
+        var suffix = "";
+        var match = name.match(/([^\^]+)(\^.*)?$/);
+        if (match) {
+            name = match[1];
+            if (match[2]) suffix = match[2];
+        }
+        if (name.match(/_(en|ar)$/)) {
+            suffix = name.slice(-3) + suffix;
+            name = name.slice(0, -3);
+        }
+        return { base: name, suffix: suffix };
+    }
+
+    function applyCharStyle(para, doc, prefix, regex, suffix, anchorOffset) {
+        var styleName = prefix + suffix;
+        var text = para.contents;
+        var match;
+        var ranges = [];
+        var matchCount = 0;
+
+        while ((match = regex.exec(text)) !== null) {
+            matchCount++;
+            var full = match[0];
+            var inner = match[1];
+            var start = para.contents.indexOf(full, anchorOffset);
+            if (start === -1) {
+                continue;
+            }
+
+            var charStart = Math.round(start + (full.length - inner.length) / 2);
+            var charEnd = Math.round(start + (full.length + inner.length) / 2 - 1);
+
+            if (charStart < 0 || charEnd >= para.characters.length || charEnd < charStart) {
+                continue;
+            }
+            ranges.push({ start: charStart, end: charEnd });
+        }
+
+        for (var i = ranges.length - 1; i >= 0; i--) {
+            try {
+                var range = para.characters.itemByRange(ranges[i].start, ranges[i].end);
+                if (range.isValid) {
+                    range.appliedCharacterStyle = doc.characterStyles.itemByName(styleName);
+                } else {
+                }
+            } catch (e) {
+            }
+        }
+    }
+
+    function cleanMarkdown(para, regex, removeStart, removeEnd) {
+        var text = para.contents;
+        var matches = [];
+        var match;
+        var matchCount = 0;
+        
+        while ((match = regex.exec(text)) !== null) {
+            matchCount++;
+            var full = match[0];
+            var start = text.indexOf(full);
+            if (start !== -1) {
+                matches.push({ start: start, fullLength: full.length });
+            }
+        }
+        
+        for (var i = matches.length - 1; i >= 0; i--) {
+            var m = matches[i];
+            
+            for (var j = 0; j < removeEnd; j++) {
+                para.characters.item(m.start + m.fullLength - 1 - j).remove();
+            }
+            
+            for (var j = 0; j < removeStart; j++) {
+                para.characters.item(m.start).remove();
+            }
+        }
+    }
+
+    function applyLinkStyle(para, doc, prefix, styleSuffix, anchorOffset) {
+        var regex = /\[([^\]]+)\]\(([^)]+)\)/g;
+        var text = para.contents;
+        var result;
+        var linkCount = 0;
+
+        while ((result = regex.exec(text)) !== null) {
+            linkCount++;
+            var full = result[0], label = result[1], url = result[2];
+            var start = para.contents.indexOf(full, anchorOffset);
+            if (start === -1) {
+                continue;
+            }
+            var labelStart = start + 1;
+            var labelEnd = labelStart + label.length - 1;
+            var range = para.characters.itemByRange(labelStart, labelEnd);
+
+            var dest;
+            try {
+                dest = doc.hyperlinkURLDestinations.itemByName(url);
+                if (!dest.isValid) throw "invalid";
+            } catch (e) {
+                dest = doc.hyperlinkURLDestinations.add({ name: url, destinationURL: url });
+            }
+            var src = doc.hyperlinkTextSources.add(range);
+            doc.hyperlinks.add(src, dest);
+            range.appliedCharacterStyle = doc.characterStyles.itemByName(prefix + "Link" + styleSuffix);
+            var end = start + full.length - 1;
+            for (var i = end; i >= start + label.length + 2; i--) {
+                para.characters.item(i).remove();
+            }
+            para.characters.item(start + label.length + 1).remove();
+            para.characters.item(start).remove();
+            text = para.contents;
+            regex.lastIndex = start;
+        }
+    }
+
+    function getAnchorOffset(para) {
+        var contents = para.contents;
+        var index = 0;
+        while (index < contents.length && contents.charCodeAt(index) === 65532) {
+            index++;
+        }
+        return index;
+    }
+
+    function ensureParagraphStyle(doc, name, basedOnName, size, isList, listType, level) {
+        try { 
+            doc.paragraphStyles.item(name).name; 
+            return; 
+        } catch (e) {
+        }
+        
+        var style = doc.paragraphStyles.add({ name: name });
+        try { 
+            if (basedOnName) {
+                style.basedOn = doc.paragraphStyles.itemByName(basedOnName); 
+            }
+        } catch (e) {
+        }
+        
+        if (size != null) {
+            style.pointSize = size;
+        }
+
+        if (isList) {
+            style.bulletsAndNumberingListType = (listType === "ordered") ? ListType.NUMBERED_LIST : ListType.BULLET_LIST;
+            style.bulletsAlignment = ListAlignment.LEFT_ALIGN;
+            var indentAmount = size * 0.3528 * level;
+            var firstLine = -(size * 0.3528);
+
+            var dir = ParagraphDirectionOptions.LEFT_TO_RIGHT_DIRECTION;
+            try { 
+                dir = app.activeDocument.textPreferences.storyDirection; 
+            } catch (e) {
+            }
+
+            if (dir === ParagraphDirectionOptions.RIGHT_TO_LEFT_DIRECTION) {
+                style.rightIndent = indentAmount;
+                style.leftIndent = 0;
+            } else {
+                style.leftIndent = indentAmount;
+                style.rightIndent = 0;
+            }
+            style.firstLineIndent = firstLine;
+        }
+    }
+
+    function ensureCharacterStyle(doc, name, props) {
+        try { 
+            doc.characterStyles.item(name).name; 
+            return; 
+        } catch (e) {
+        }
+        
+        var style = doc.characterStyles.add({ name: name });
+        for (var key in props) {
+            if (props.hasOwnProperty(key)) {
+                style[key] = props[key];
+            }
+        }
+    }
+
+    function getOrCreateLinkColor(doc) {
+        var name = "Link";
+        try {
+            var existing = doc.colors.itemByName(name);
+            var _ = existing.name;
+            return existing;
+        } catch (e) {
+            return doc.colors.add({
+                name: name,
+                model: ColorModel.PROCESS,
+                space: ColorSpace.RGB,
+                colorValue: [0, 255, 255]
+            });
+        }
+    }
+}

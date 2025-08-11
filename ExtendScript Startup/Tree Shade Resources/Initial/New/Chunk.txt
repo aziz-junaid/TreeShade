@@ -1,0 +1,13 @@
+::./<FN>/*<ASM>*:Place:\r::Body<ASM><BO>Body:Para::Replace:[\r\n]+\s*\-\s*[\r\n]+:\r:
+<ts><id_en>./<FN>/.+hdn_en.+<Place></ts>
+<ts><id#en/\r?\n\s*-\s*\r?\n>
+    <span class="lang en">
+        <row>
+    </span>
+<Separator/</li><li>></ts>
+<ts><id_ar>./<FN>/.+hdn_ar.+<Place></ts>
+<ts><id#ar/\r?\n\s*-\s*\r?\n>
+    <span class="lang ar">
+        <row>
+    </span>
+<Separator/</li><li>></ts>

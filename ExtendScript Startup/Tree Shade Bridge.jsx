@@ -612,8 +612,8 @@ onOpenFolder = function (event) {
                                                     "<.>: Snippet parent folder name. add dots for parent of parent...",
                                                     "To reference to the document instead of the snippet file write like this '.$/' or '<.$>'...",
                                                     "Also use these tags with path:",
-                                                    "<File_Base>, <File_Name>, <Original_File_Name>, <Previous_File_Name>,",
-                                                    "<Container_File_Base>, <Container_File_Name>, <File_Level>, <Doc_Name>, <Doc_Order>, <Page_Num>,",
+                                                    "<File_Branch>, <File_Name>, <File_Display>, <Original_File_Name>, <Previous_File_Name>,",
+                                                    "<Container_File_Branch>, <Container_File_Name>, <File_Level>, <Doc_Name>, <Doc_Order>, <Page_Num>,",
                                                     "<Applied_Section_Prefix>, <Applied_Section_Marker>, <Master_Prefix>, <Master_Name>, <Master_Full_Name>,",
                                                     "<Para_Order>, <Para_First>, <Para_Before>, <Para_This>, <Para_After>, <Para_Style>, <Char_Style>,",
                                                     "<Col_Head>, <Col_Num>, <Row_Head>, <Row_Num>, <Name_At>, <Shift1>.",
@@ -624,7 +624,15 @@ onOpenFolder = function (event) {
                                                     "Dynamic Table Formula:",
                                                     "'Sum', 'Subtract', 'Divide', 'Multiply', 'Average', 'Count', or 'Join'.",
                                                     "For an example <Sum (<Col_Num>, 1)(<Col_Num>, <Row_Num> - 1)> This will get the sum of all cells above.",
-                                                    "You could abbreviate any one like <FB> instead of <File_Base>.",
+                                                    "You could abbreviate any one like <FB> instead of <File_Branch>.",
+                                                    "",
+                                                    "The following also accepts abbreviation and used for date, time and random code:",
+                                                    "<Day_Seconds>, <Day_Minutes>, <Day_Hours>, <Weekday_Order>, <Weekday_Name>, <Weekday_Abbreviation>,",
+                                                    "<Month_Date>, <Month_Order>, <Month_Name>, <Month_Abbreviation>, <Year_Full>,",
+                                                    "<Year_Abbreviation>, <Time_Decimal>, <Time_Hexadecimal>, <Time_Shortest>,",
+                                                    "<Random_Style_Long> Where 'Style' a combination of symbols 'a' for small letters,",
+                                                    "'A' capital letters, 'h' small hexadecimal, 'H' large hexadecimal and '1' for numbers.",
+                                                    "For example <Random_1A_8> means random 8 characters consists of capital letters and numbers",
                                                     "",
                                                     "Method:",
                                                     "'Snippets', 'Place', 'Names' or 'Repeat', 'Key', 'Data'.",
@@ -2059,8 +2067,6 @@ function tsMoveToTrash (folderOrFile , treeOrVersionOrOut, directPath, isUser, f
                 }
             }
             //move Tree file
-
-            //Remove file treeshae thumb
             var idThumbFile = new File (tsWorkshopPath + relativePath + tsGetTreeShadeThumb (fileName) + fileName + ".jpg");
             if (idThumbFile.exists) {
                 idThumbFile.remove ();                    
@@ -2080,8 +2086,10 @@ function tsMoveToTrash (folderOrFile , treeOrVersionOrOut, directPath, isUser, f
                     var dStr = "";
                     if (d != 0) {
                         dStr = d.toString ();
+                        var toRenameFile = new File (tsTrashPath + baseFolder + relativePath + "/" + absoluteName + fileExtension);
+                        toRenameFile.rename (absoluteName + dStr + fileExtension);
                     }
-                    var destinationFile = new File (tsTrashPath + baseFolder + relativePath + "/" + absoluteName + dStr + fileExtension);
+                    var destinationFile = new File (tsTrashPath + baseFolder + relativePath + "/" + absoluteName + fileExtension);
                     if (!destinationFile.parent.exists)
                         destinationFile.parent.create ();
                     if (!isCSFile (folderOrFile)) {
@@ -2954,99 +2962,102 @@ function tsSolveDateTime (toBeSolvedPhrase) {
     //TH <Time_Hexadecimal>
     //TM <Time_Minimum>
 
-    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Day_Seconds>/gi,           "<DS>");
-    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Day_Minutes>/gi,           "<DM>");
-    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Day_Hours>/gi,             "<DH>");
-    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Weekday_Order>/gi,         "<WO>");
-    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Weekday_Name>/gi,          "<WN>");
-    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Weekday_Abbreviation>/gi,  "<WA>");
-    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Month_Date>/gi,            "<MD>");
-    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Month_Order>/gi,           "<MO>");
-    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Month_Name>/gi,            "<MN>");
-    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Month_Abbreviation>/gi,    "<MA>");
-    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Year_Full>/gi,             "<YF>");
-    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Year_Abbreviation>/gi,     "<YA>");
-    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Time_Numbers>/gi,          "<TN>");
-    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Time_Hexadecimal>/gi,      "<TH>");
-    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Time_Minimum>/gi,          "<TM>");
+    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Day_Seconds>|\{Day_Seconds\}/gi, "<DS>");
+    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Day_Minutes>|\{Day_Minutes\}/gi, "<DM>");
+    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Day_Hours>|\{Day_Hours\}/gi, "<DH>");
+    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Weekday_Order>|\{Weekday_Order\}/gi, "<WO>");
+    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Weekday_Name>|\{Weekday_Name\}/gi, "<WN>");
+    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Weekday_Abbreviation>|\{Weekday_Abbreviation\}/gi, "<WA>");
+    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Month_Date>|\{Month_Date\}/gi, "<MD>");
+    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Month_Order>|\{Month_Order\}/gi, "<MO>");
+    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Month_Name>|\{Month_Name\}/gi, "<MN>");
+    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Month_Abbreviation>|\{Month_Abbreviation\}/gi, "<MA>");
+    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Year_Full>|\{Year_Full\}/gi, "<YF>");
+    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Year_Abbreviation>|\{Year_Abbreviation\}/gi, "<YA>");
+    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Time_Numbers>|\{Time_Numbers\}/gi, "<TN>");
+    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Time_Hexadecimal>|\{Time_Hexadecimal\}/gi, "<TH>");
+    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Time_Minimum>|\{Time_Minimum\}/gi, "<TM>");
 
-    var matches = null;
+    toBeSolvedPhrase = toBeSolvedPhrase.replace (/\{(DS|DM|DH|WO|WN|WA|MD|MO|MN|MA|YF|YA|TN|TH|TM)\}/gi, "<$1>");
+
+    var matches = toBeSolvedPhrase.match (/<(DS|DM|DH|WO|WN|WA|MD|MO|MN|MA|YF|YA|TN|TH|TM)>/gi);
     var theDate = new Date();
-    do {
-        matches = toBeSolvedPhrase.match (/<(DS|DM|DH|WO|WN|WA|MD|MO|MN|MA|YF|YA|TN|TH|TM)[^<>]*>/gi);
-        if (matches) {
-            var firstMatch = matches[0];
-            var firstThree = firstMatch.slice (0, 3).toUpperCase();
-            switch(firstThree) {
-                case "<DS": case "<ds":
-                    var daySeconds = tsFillZeros (theDate.getSeconds(), 2);
-                    toBeSolvedPhrase = toBeSolvedPhrase.replace (firstMatch, daySeconds);
+    if (matches) {
+        for (var i = 0; i < matches.length; i++) {
+            var currentMatch = matches[i];
+            var twoCapital = currentMatch.slice(1, 3).toUpperCase();
+            switch (twoCapital) {
+                case "DS":
+                    var daySeconds = tsFillZeros(theDate.getSeconds(), 2);
+                    toBeSolvedPhrase = toBeSolvedPhrase.replace(currentMatch, daySeconds);
                     break;
-                case "<DM": case "<dm":
-                    var dayMinutes = tsFillZeros (theDate.getMinutes(), 2);
-                    toBeSolvedPhrase = toBeSolvedPhrase.replace (firstMatch, dayMinutes);
+                case "DM":
+                    var dayMinutes = tsFillZeros(theDate.getMinutes(), 2);
+                    toBeSolvedPhrase = toBeSolvedPhrase.replace(currentMatch, dayMinutes);
                     break;
-                case "<DH": case "<dh":
-                    var dayHours = tsFillZeros (theDate.getHours(), 2);
-                    toBeSolvedPhrase = toBeSolvedPhrase.replace (firstMatch, dayHours);
+                case "DH":
+                    var dayHours = tsFillZeros(theDate.getHours(), 2);
+                    toBeSolvedPhrase = toBeSolvedPhrase.replace(currentMatch, dayHours);
                     break;
-                case "<WO": case "<wo":
-                    var weekdayOrder = (theDate.getDay() + 1).toString ();
-                    toBeSolvedPhrase = toBeSolvedPhrase.replace (firstMatch, weekdayOrder);
+                case "WO":
+                    var weekdayOrder = (theDate.getDay() + 1).toString();
+                    toBeSolvedPhrase = toBeSolvedPhrase.replace(currentMatch, weekdayOrder);
                     break;
-                case "<WN": case "<wn":
+                case "WN":
                     var weekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
                     var weekdayName = weekdayNames[theDate.getDay()];
-                    toBeSolvedPhrase = toBeSolvedPhrase.replace (firstMatch, weekdayName);
+                    toBeSolvedPhrase = toBeSolvedPhrase.replace(currentMatch, weekdayName);
                     break;
-                case "<WA": case "<wa":
+                case "WA":
                     var weekdayAbbs = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
                     var weekdayAbb = weekdayAbbs[theDate.getDay()];
-                    toBeSolvedPhrase = toBeSolvedPhrase.replace (firstMatch, weekdayAbb);
+                    toBeSolvedPhrase = toBeSolvedPhrase.replace(currentMatch, weekdayAbb);
                     break;
-                case "<MD": case "<md":
-                    var monthDate = tsFillZeros (theDate.getDate(), 2);
-                    toBeSolvedPhrase = toBeSolvedPhrase.replace (firstMatch, monthDate);
+                case "MD":
+                    var monthDate = tsFillZeros(theDate.getDate(), 2);
+                    toBeSolvedPhrase = toBeSolvedPhrase.replace(currentMatch, monthDate);
                     break;
-                case "<MO": case "<mo":
-                    var monthOrder = tsFillZeros (theDate.getMonth() + 1, 2);
-                    toBeSolvedPhrase = toBeSolvedPhrase.replace (firstMatch, monthOrder);
+                case "MO":
+                    var monthOrder = tsFillZeros(theDate.getMonth() + 1, 2);
+                    toBeSolvedPhrase = toBeSolvedPhrase.replace(currentMatch, monthOrder);
                     break;
-                case "<MN": case "<mn":
-                    var monthsNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                case "MN":
+                    var monthsNames = ["January", "February", "March", "April", "May", "June",
+                                    "July", "August", "September", "October", "November", "December"];
                     var monthName = monthsNames[theDate.getMonth()];
-                    toBeSolvedPhrase = toBeSolvedPhrase.replace (firstMatch, monthName);
+                    toBeSolvedPhrase = toBeSolvedPhrase.replace(currentMatch, monthName);
                     break;
-                case "<MA": case "<ma":
-                    var monthNameAbbs = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                case "MA":
+                    var monthNameAbbs = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
+                                        "Aug", "Sep", "Oct", "Nov", "Dec"];
                     var monthNameAbb = monthNameAbbs[theDate.getMonth()];
-                    toBeSolvedPhrase = toBeSolvedPhrase.replace (firstMatch, monthNameAbb);
+                    toBeSolvedPhrase = toBeSolvedPhrase.replace(currentMatch, monthNameAbb);
                     break;
-                case "<YF": case "<yf":
-                    var yearFull = theDate.getFullYear().toString ();
-                    toBeSolvedPhrase = toBeSolvedPhrase.replace (firstMatch, yearFull);
+                case "YF":
+                    var yearFull = theDate.getFullYear().toString();
+                    toBeSolvedPhrase = toBeSolvedPhrase.replace(currentMatch, yearFull);
                     break;
-                case "<YA": case "<ya":
-                    var yearAbb = theDate.getFullYear().toString ().slice (2);
-                    toBeSolvedPhrase = toBeSolvedPhrase.replace (firstMatch, yearAbb);
+                case "YA":
+                    var yearAbb = theDate.getFullYear().toString().slice(2);
+                    toBeSolvedPhrase = toBeSolvedPhrase.replace(currentMatch, yearAbb);
                     break;
-                case "<TN": case "<tn":
-                    var timeNumbers = theDate.getTime ().toString ();
-                    toBeSolvedPhrase = toBeSolvedPhrase.replace (firstMatch, timeNumbers);
+                case "TN":
+                    var timeNumbers = theDate.getTime().toString();
+                    toBeSolvedPhrase = toBeSolvedPhrase.replace(currentMatch, timeNumbers);
                     break;
-                case "<TH": case "<th":
-                    var timeHexa = theDate.getTime ().toString (16);
-                    toBeSolvedPhrase = toBeSolvedPhrase.replace (firstMatch, timeHexa);
+                case "TH":
+                    var timeHexa = theDate.getTime().toString(16);
+                    toBeSolvedPhrase = toBeSolvedPhrase.replace(currentMatch, timeHexa);
                     break;
-                case "<TM": case "<tm":
-                    var timeShort = theDate.getTime ().toString (36);
-                    toBeSolvedPhrase = toBeSolvedPhrase.replace (firstMatch, timeShort);
+                case "TM":
+                    var timeShort = theDate.getTime().toString(36);
+                    toBeSolvedPhrase = toBeSolvedPhrase.replace(currentMatch, timeShort);
                     break;
                 default:
-                    toBeSolvedPhrase = toBeSolvedPhrase.replace (firstMatch, "");
+                    toBeSolvedPhrase = toBeSolvedPhrase.replace(currentMatch, "");
             }
         }
-    } while (matches);
+    }
     return toBeSolvedPhrase;
 }
 
@@ -3054,8 +3065,11 @@ function tsSolveRandom (toBeSolvedPhrase, exceptionChar) {
     //R <Random_Style_Long>
     //Use in Style 'a' small letters, 'A' capital letters, 'h' small hexadecimal, 'H' large hexadecimal, '1' numbers
 
-    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Random_([^<>]+>)/gi, "<R_$1");
+    toBeSolvedPhrase = toBeSolvedPhrase.replace(/<Random_([^<>]+)>/gi, "<R_$1");
     toBeSolvedPhrase = toBeSolvedPhrase.replace(/<R>/gi, "<R_A1_5>");
+    toBeSolvedPhrase = toBeSolvedPhrase.replace(/\{Random_([^\{\}]+)\}/gi, "<R_$1");
+    toBeSolvedPhrase = toBeSolvedPhrase.replace(/\{R\}/gi, "<R_A1_5>");
+    toBeSolvedPhrase = toBeSolvedPhrase.replace(/\{R_([^\{\}]+)\}/gi, "<R_$1>");
 
     var matches = toBeSolvedPhrase.match (/<R_[^<>]*>/gi);
     if (matches) {
@@ -3186,12 +3200,13 @@ function autoCheckInAddHandler () {
                         "<FF>: First folder.",
                         "<LF>: Last folder.",
                         "",
-                        "The following accepts abbreviation and used for date, time and random code:",
-                        "<Day_Seconds>, <Day_Minutes>, <Day_Hours>, <Day_Order>, <Day_Name>, <Day_Abbreviation>,",
+                        "The following also accepts abbreviation and used for date, time and random code:",
+                        "<Day_Seconds>, <Day_Minutes>, <Day_Hours>, <Weekday_Order>, <Weekday_Name>, <Weekday_Abbreviation>,",
                         "<Month_Date>, <Month_Order>, <Month_Name>, <Month_Abbreviation>, <Year_Full>,",
-                        "<Year_Abbreviation>, <Time_Decimal>, <Time_Hexadecimal>, <Time_Minimum>,",
+                        "<Year_Abbreviation>, <Time_Decimal>, <Time_Hexadecimal>, <Time_Shortest>,",
                         "<Random_Style_Long> Where 'Style' a combination of symbols 'a' for small letters,",
                         "'A' capital letters, 'h' small hexadecimal, 'H' large hexadecimal and '1' for numbers.",
+                        "For example <Random_1A_8> means random 8 characters consists of capital letters and numbers",
                         ""
                         ];
                         sourceDeterminer = tsGetText (messageLines, sourceDeterminer, false);
@@ -3230,10 +3245,10 @@ function autoCheckInAddHandler () {
                                                             "<DD>: Delete destination if the file deleted.",
                                                             "<CO>: When Conflict overwrite the destination.",
                                                             "",
-                                                            "The following accepts abbreviation and used for date, time and random code:",
-                                                            "<Day_Seconds>, <Day_Minutes>, <Day_Hours>, <Day_Order>, <Day_Name>, <Day_Abbreviation>,",
+                                                            "The following also accepts abbreviation and used for date, time and random code:",
+                                                            "<Day_Seconds>, <Day_Minutes>, <Day_Hours>, <Weekday_Order>, <Weekday_Name>, <Weekday_Abbreviation>,",
                                                             "<Month_Date>, <Month_Order>, <Month_Name>, <Month_Abbreviation>, <Year_Full>,",
-                                                            "<Year_Abbreviation>, <Time_Decimal>, <Time_Hexadecimal>, <Time_Minimum>,",
+                                                            "<Year_Abbreviation>, <Time_Decimal>, <Time_Hexadecimal>, <Time_Shortest>,",
                                                             "<Random_Style_Long> Where 'Style' a combination of symbols 'a' for small letters,",
                                                             "'A' capital letters, 'h' small hexadecimal, 'H' large hexadecimal and '1' for numbers.",
                                                             "For example <Random_1A_8> means random 8 characters consists of capital letters and numbers",
@@ -5128,20 +5143,36 @@ function tsPickForChangeHandler () {
     }
 }
 
-function tsGetDisplayName (pureName) {
-    var returned = "LABEL";
-    if (pureName.indexOf (".") != -1) {
-        pureName = pureName.slice (0, pureName.lastIndexOf ("."));
+function tsGetDisplayName(fileName) {
+    var pureName = fileName;
+    if (pureName.indexOf(".") != -1) {
+        pureName = pureName.slice(0, pureName.lastIndexOf("."));
     }
 
-    if (pureName.search (/\[[^\[\]]+\]$/) != -1) {
-        pureName = pureName.match (/\[[^\[\]]+\]$/)[0].slice (1, -1);
-        if (pureName != '') {
-            returned = pureName;
-        }
+    var match = pureName.match(/\[[^\[\]]*\]$/);
+    if (match) {
+        var content = match[0].slice(1, -1);
+        return content;
     }
 
-    return returned;
+    return null;
+}
+
+function tsSetDisplayName (fileName, newDisplayName) {
+    var nameWithoutExt = fileName;
+    var ext = "";
+    if (fileName.indexOf (".") != -1) {
+        ext = fileName.slice (fileName.lastIndexOf ("."));
+        nameWithoutExt = nameWithoutExt.slice (0, nameWithoutExt.lastIndexOf ("."));
+    }
+
+    if (nameWithoutExt.search (/\[[^\[\]]+\]$/) != -1) {
+        nameWithoutExt = nameWithoutExt.replace (/\[[^\[\]]+\]$/, "[" + newDisplayName + "]");
+    }
+    else {
+        nameWithoutExt += " [" + newDisplayName + "]";
+    }
+    return nameWithoutExt + ext;
 }
 
 function tsChangeHandler (templatesFile) {
@@ -5181,10 +5212,6 @@ function tsChangeHandler (templatesFile) {
             var isToDuplicate = false;
             var duplicatingTimes = 0;
             var conflictOption = 3; //Solve
-            var defaultChange = tsChangeTemplate;
-            if (templatesFile) {
-                defaultChange = ".$/<CE><D><FN>";
-            }
             var promptMessage = [
                 "Direct Commands:",
                 "",
@@ -5217,7 +5244,7 @@ function tsChangeHandler (templatesFile) {
                 "<SF>: Selected folder name.",
                 "<SP>: Sub Path inside the selected folder.",
                 "<SP.>: Sub Path separated by dots.",
-                "<L>: What left of the path from current folder to the file name, combining <SF>/<SP>/<FN> together.",
+                "<L>: What left of the path from selected folder to the file name, combining <SF>/<SP>/<FN> together.",
                 "<FF>: First folder.",
                 "<LF>: Last folder.", 
                 "<NFEF>: New folder for each file.",
@@ -5229,20 +5256,21 @@ function tsChangeHandler (templatesFile) {
                 "<RE/from/to>: Replace the file extension.",
                 "Use regex in'from' part. Put '*' in 'to' part to be asked for a new list.",
                 "",
-                "The following accepts abbreviation and used for date, time and random code:",
-                "<Day_Seconds>, <Day_Minutes>, <Day_Hours>, <Day_Order>, <Day_Name>, <Day_Abbreviation>,",
+                "The following also accepts abbreviation and used for date, time and random code:",
+                "<Day_Seconds>, <Day_Minutes>, <Day_Hours>, <Weekday_Order>, <Weekday_Name>, <Weekday_Abbreviation>,",
                 "<Month_Date>, <Month_Order>, <Month_Name>, <Month_Abbreviation>, <Year_Full>,",
-                "<Year_Abbreviation>, <Time_Decimal>, <Time_Hexadecimal>, <Time_Minimum>,",
+                "<Year_Abbreviation>, <Time_Decimal>, <Time_Hexadecimal>, <Time_Shortest>,",
                 "<Random_Style_Long> Where 'Style' a combination of symbols 'a' for small letters,",
                 "'A' capital letters, 'h' small hexadecimal, 'H' large hexadecimal and '1' for numbers.",
-                "For example, <Random_1A_8> means 8 random characters consisting of capital letters and numbers.",
+                "For example <Random_1A_8> means random 8 characters consists of capital letters and numbers",
                 "Write like <Random_=1A_8> to generate one random instance for all."];
             if (tsChangeShortcuts.length > 0) {
                 promptMessage = tsChangeShortcuts.concat(
                     [
                         "",
-                        "1. To execute a shortcut, write its abbreviation followed by a ':' (colon).",
-                        "2. To remove a shortcut, write its abbreviation followed by ':!' (colon and exclamation mark).",
+                        "1. To add a shortcut, write something like 'd Describtion of the Command: THE_NEW_PATH'.",
+                        "2. To execute a shortcut, write its abbreviation followed by ':' (colon).",
+                        "3. To remove a shortcut, write its abbreviation followed by ':!' (colon and exclamation mark).",
                         ""
                     ],
                     promptMessage
@@ -5250,7 +5278,15 @@ function tsChangeHandler (templatesFile) {
                 promptMessage.unshift ("Shortcuts:");
             }
             promptMessage.unshift ("");
-            var promptName = tsGetText (promptMessage, defaultChange, false);
+            var promptName = null;
+            var isTemplatesFile = false;
+            if (templatesFile) {
+                promptName = ".$/<FN><CE><D><WP>";
+                isTemplatesFile = true;
+            }
+            else {
+                promptName = tsGetText (promptMessage, tsChangeTemplate, false);
+            }
             var isCommand = false;
             if (promptName) {
                 if (promptName.search (/<OO>/i) != -1 || promptName.search (/<UO>/i) != -1 || promptName.search (/<OP>/i) != -1 || promptName.search (/<UP>/i) != -1) {
@@ -5380,7 +5416,6 @@ function tsChangeHandler (templatesFile) {
                 }
             }
             if (!isCommand && promptName) {
-                promptName = tsSolveDateTime (promptName);
                 promptName = tsSolveRandom (promptName, '=');
                 if (templatesFile == null) {
                     tsChangeTemplate = promptName;
@@ -5630,6 +5665,7 @@ function tsChangeHandler (templatesFile) {
                         if (currentPromptName.search (/<FD>/i) != -1) {
                             var targetName = File.decode (filesListWithSubs[r][0].name);
                             targetName = tsGetDisplayName (targetName);
+                            if (targetName == null) targetName = '';
                             currentPromptName = currentPromptName.replace(/<FD>/gi, targetName);
                         }
                         if (currentPromptName.search (/<FN>/i) != -1) {
@@ -5799,10 +5835,12 @@ function tsChangeHandler (templatesFile) {
                             }
                             currentPromptName = desPath + desName;
                         }
+                        currentPromptName = tsSolveDateTime (currentPromptName);
+                        currentPromptName = tsSolveRandom (currentPromptName, null);
                         var desFullPath = currentPromptName + extension;
                         if (isCE) {
                             tsChangeList[0]++;
-                            tsChangeList.push ([filesListWithSubs[r][0].fsName.replace(/\\/g, '/'), desFullPath, isToDuplicate, conflictOption, isWP]);
+                            tsChangeList.push ([filesListWithSubs[r][0].fsName.replace(/\\/g, '/'), desFullPath, isToDuplicate, conflictOption, isWP, isTemplatesFile]);
                         }
                         else {
                             if (filesListWithSubs[r][0].fsName.replace(/\\/g, '/') != desFullPath || conflictOption == 3) {
@@ -5849,6 +5887,7 @@ function tsChangeHandler (templatesFile) {
         //tsChangeList[cel][2] is to duplicate
         //tsChangeList[cel][3] conflict Option
         //tsChangeList[cel][4] isWP
+        //tsChangeList[cel][5] isTemplatesFile
         var isToSkipToNext = true;
         var fromFile = new File (tsChangeList[cel][0]);
         if (fromFile.exists) {
@@ -5859,7 +5898,33 @@ function tsChangeHandler (templatesFile) {
             }
             var theOrder = (tsChangeList[0] - tsChangeList.length + cel + 1) + " of " + tsChangeList[0];
             var copyMoveTxt = tsChangeList[cel][2]? "Copy: " : "Move: ";
-            tsChangeList[cel][1] = tsGetText ([theOrder, copyMoveTxt, fromFile.fsName.replace(/\\/g, '/'), "", "To:"], tsChangeList[cel][1], false);
+            if (tsChangeList[cel][5]) {
+                var pathSplitted = tsChangeList[cel][1].split ("/");
+                if (pathSplitted.length > 1) {
+                    var displayPart = tsGetDisplayName (pathSplitted[pathSplitted.length-1]);
+                    if (displayPart !== null) {
+                        var newDisplayPart = prompt ("New Label:", displayPart);
+                        pathSplitted[pathSplitted.length-1] = tsSetDisplayName (pathSplitted[pathSplitted.length-1], newDisplayPart);
+                    }
+                    else {
+                        var nameWithoutExt = pathSplitted[pathSplitted.length-1];
+                        var nameExt = "";
+                        if (pathSplitted[pathSplitted.length-1].indexOf (".") != -1) {
+                            nameExt = pathSplitted[pathSplitted.length-1].slice (pathSplitted[pathSplitted.length-1].lastIndexOf ("."));
+                            nameWithoutExt = pathSplitted[pathSplitted.length-1].slice (0, pathSplitted[pathSplitted.length-1].lastIndexOf ("."));
+                        }
+                        var newFileName = prompt ("New File Name:", nameWithoutExt);
+                        if (newFileName) {
+                            nameWithoutExt = newFileName;
+                        }
+                        pathSplitted[pathSplitted.length-1] = nameWithoutExt + nameExt;
+                    }
+                    tsChangeList[cel][1] = pathSplitted.join ("/");
+                }
+            }
+            else {
+                tsChangeList[cel][1] = tsGetText ([theOrder, copyMoveTxt, fromFile.fsName.replace(/\\/g, '/'), "", "To:"], tsChangeList[cel][1], false);
+            }
             if (!tsChangeList[cel][1]) {
                 if (cel != tsChangeList.length - 1) {
                     isToSkipToNext = confirm ("Skip to next file?");
@@ -6839,36 +6904,97 @@ function createContextMenu () {
     };
 }
 
-function createTemplateCommand (targetFileOrFolder, parentMenu) {
-    if (File.decode (targetFileOrFolder.name)[0] == '-')
+function createTemplateCommand(targetFileOrFolder, parentMenu, foldersList) {
+    if (File.decode(targetFileOrFolder.name)[0] == '-') {
         return false;
-    if (targetFileOrFolder instanceof Folder) {
-        var menuOrCommand = File.decode (targetFileOrFolder.name).replace(/ /g, "");
-        var newMenu = new MenuElement( "menu", File.decode (targetFileOrFolder.name), "at the end of " + parentMenu, menuOrCommand + "TemplateMenu");
-        var allTemplates = targetFileOrFolder.getFiles (isAcceptedFileOrFolder);
-        for (var atf = 0; atf < allTemplates.length; atf++) {
-            createTemplateCommand (allTemplates[atf], menuOrCommand + "TemplateMenu");
-        }
     }
-    else {
-        var commandDisplay = File.decode (targetFileOrFolder.name);
-        if (commandDisplay.indexOf (".") > 0)
-        commandDisplay = commandDisplay.slice (0, commandDisplay.lastIndexOf ("."));
-        if (commandDisplay[0] == '[') {
-            if (commandDisplay.indexOf ("]") != -1)
-            commandDisplay = commandDisplay.slice (commandDisplay.indexOf ("]") + 1);
-            if (commandDisplay == "")
-                return false;
-            commandDisplay = "[] " + commandDisplay;
+    var displayName = File.decode(targetFileOrFolder.name);
+    var pureName = tsGetPureName(displayName, false);
+    var cleanName = displayName.replace(/ /g, "");
+    var internalName = parentMenu + "_" + cleanName;
+    var unsafeID = internalName + "Menu";
+    var safeID = unsafeID.replace(/[^a-zA-Z0-9_]/g, "");
+    if (targetFileOrFolder instanceof File) {
+        var pairedFolder = new Folder(targetFileOrFolder.parent + "/" + pureName);
+        var commandDisplay = displayName;
+        var displayPart = tsGetDisplayName (displayName);
+        if (displayPart) {
+            commandDisplay = displayPart;
         }
-        var menuOrCommand = commandDisplay.replace(/ /g, "");
-        var newCommand = new MenuElement( "command", commandDisplay, "at the end of " + parentMenu, menuOrCommand + "TemplateCommand");
-        newCommand.onSelect = function (m) 
-        {
-            tsChangeHandler (targetFileOrFolder);
-        };
+        else {
+            if (commandDisplay.indexOf(".") > 0)
+                commandDisplay = commandDisplay.slice(0, commandDisplay.lastIndexOf("."));
+    
+            if (commandDisplay[0] == '[' && commandDisplay.indexOf("]") != -1) {
+                var trimmed = commandDisplay.slice(commandDisplay.indexOf("]") + 1);
+                commandDisplay = (trimmed != "") ? "[] " + trimmed : "";
+            }
+        }
+        if (pairedFolder.exists) {
+            if (foldersList) {
+                for (var i = foldersList.length - 1; i >= 0; i--) {
+                    if (File.decode(foldersList[i].name) == pureName) {
+                        foldersList.splice(i, 1);
+                        break;
+                    }
+                }
+            }
+            var subMenu = new MenuElement("menu", commandDisplay, "at the end of " + parentMenu, safeID);
+            var pairedCmd = new MenuElement("command", "New", "at the beginning of " + safeID + "-", internalName + "PairedFile");
+            pairedCmd.onSelect = function () {
+                tsChangeHandler(targetFileOrFolder);
+            };
+            var innerFiles = pairedFolder.getFiles(isAcceptedFile);
+            tsSortFilesList(pairedFolder, innerFiles, false);
+            var innerFolders = pairedFolder.getFiles(isAcceptedFolder);
+            tsSortFilesList(pairedFolder, innerFolders, true);
+            for (var j = 0; j < innerFiles.length; j++) {
+                createTemplateCommand(innerFiles[j], safeID, innerFolders);
+            }
+            for (var j = 0; j < innerFolders.length; j++) {
+                createTemplateCommand(innerFolders[j], safeID, null);
+            }
+        } else {
+            if (commandDisplay == "") {
+                return false;
+            }
+            var newCommand = new MenuElement("command", commandDisplay, "at the end of " + parentMenu, internalName + "Cmd");
+            newCommand.onSelect = function () {
+                tsChangeHandler(targetFileOrFolder);
+            };
+        }
+    } else {
+        var newMenu = new MenuElement("menu", displayName, "at the end of " + parentMenu, safeID);
+
+        var innerFiles = targetFileOrFolder.getFiles(isAcceptedFile);
+        tsSortFilesList(targetFileOrFolder, innerFiles, false);
+        var innerFolders = targetFileOrFolder.getFiles(isAcceptedFolder);
+        tsSortFilesList(targetFileOrFolder, innerFolders, true);
+        for (var j = 0; j < innerFiles.length; j++) {
+            createTemplateCommand(innerFiles[j], safeID, innerFolders);
+        }
+        for (var j = 0; j < innerFolders.length; j++) {
+            createTemplateCommand(innerFolders[j], safeID, null);
+        }
     }
 }
+
+function logDebug(message) {
+    var desktop = Folder.desktop;
+    var logFile = new File(desktop.fsName + "/TreeShade_DebugLog.txt");
+    if (logFile.open("a")) {
+        var now = new Date();
+        var timestamp = now.getFullYear() + "-" +
+                        ("0" + (now.getMonth() + 1)).slice(-2) + "-" +
+                        ("0" + now.getDate()).slice(-2) + " " +
+                        ("0" + now.getHours()).slice(-2) + ":" +
+                        ("0" + now.getMinutes()).slice(-2) + ":" +
+                        ("0" + now.getSeconds()).slice(-2);
+        logFile.writeln("[" + timestamp + "] " + message);
+        logFile.close();
+    }
+}
+
 
 function createPlugInMenu (isStopped) {
     /**///$.writeln ($.line);
@@ -6877,15 +7003,26 @@ function createPlugInMenu (isStopped) {
     if (!isStopped) {
         var newSubmenu = new MenuElement( "menu", "New", "at the end of treeShadeMenu", "newSubmenu");
         if (tsTemplatesPath == "CCC") {
-            tsTemplatesPath = tsWorkshopPath + "/Templates";
+            tsTemplatesPath = tsWorkshopPath + "/Initial/New";
         }
-        var templatesFolder = new Folder (tsTemplatesPath);
+
+        var templatesFolder = new Folder(tsTemplatesPath);
         if (templatesFolder.exists) {
-            var allTemplates = templatesFolder.getFiles (isAcceptedFileOrFolder);
-            for (var atf = 0; atf < allTemplates.length; atf++) {
-                createTemplateCommand (allTemplates[atf], "newSubmenu");
+            var innerFiles = templatesFolder.getFiles(isAcceptedFile);
+            tsSortFilesList(templatesFolder, innerFiles, false);
+
+            var innerFolders = templatesFolder.getFiles(isAcceptedFolder);
+            tsSortFilesList(templatesFolder, innerFolders, true);
+            for (var j = 0; j < innerFiles.length; j++) {
+                createTemplateCommand(innerFiles[j], "newSubmenu", innerFolders);
             }
+
+            for (var j = 0; j < innerFolders.length; j++) {
+                createTemplateCommand(innerFolders[j], "newSubmenu", null);
+            }
+        } else {
         }
+
         
         var changeTemplatePathCommand = new MenuElement( "command", "Change Path", "-at the end of newSubmenu", "changeTemplatePathCommand");
         changeTemplatePathCommand.onSelect = function (m) 
@@ -6923,7 +7060,7 @@ function createPlugInMenu (isStopped) {
 
         var relationsSubmenu = new MenuElement( "menu", "The Copying Sequence", "at the end of treeShadeMenu", "relationsSubmenu");
         if (tsTemplatesPath == "CCC") {
-            tsTemplatesPath = tsWorkshopPath + "/Templates";
+            tsTemplatesPath = tsWorkshopPath + "/Initial/New";
         }
         
         var revealOriginalCommand = new MenuElement( "command", "Reveal Original", "at the end of relationsSubmenu", "revealOriginalCommand");
@@ -8500,36 +8637,7 @@ function retrieveFilesList (targetItem, filesList, isUserSortOrder, excludedPare
         var allUnhiddenItems = null;
         allUnhiddenItems = targetItem.getFiles (isAcceptedFileOrFolder);
         if (isUserSortOrder) {
-            var tsSortFile = new File (targetItem.fsName.replace(/\\/g, '/') + "/ts_sort.txt");
-            if (tsSortFile.exists) {
-                var sortFileContent = readFile (tsSortFile);
-                if (sortFileContent) {
-                    var sortList = '';
-                    if (sortFileContent.indexOf ('\r\n') != -1) {
-                        sortList = sortFileContent.split ("\r\n");
-                    }
-                    else {
-                        sortList = sortFileContent.split ("\n");
-                    }
-                    if (sortList.length > 0) {
-                        var sortIndex = 0;
-                        for (var sl = 0; sl < sortList.length; sl++) {
-                            var pureFileName = sortList[sl].slice (11, -4);
-                            for (var aui = sortIndex; aui < allUnhiddenItems.length; aui++) {
-                                if (File.decode (allUnhiddenItems[aui].name) == pureFileName) {
-                                    if (aui != sortIndex) {
-                                        var swapCell = allUnhiddenItems[aui];
-                                        allUnhiddenItems[aui] = allUnhiddenItems[sortIndex];
-                                        allUnhiddenItems[sortIndex] = swapCell;
-                                    }
-                                    sortIndex++;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-            }    
+            tsSortFilesList (targetItem, allUnhiddenItems, null);
         }
         for (var c = 0; c < allUnhiddenItems.length; c++) {
             retrieveFilesList (allUnhiddenItems[c], filesList, isUserSortOrder, excludedParentNames);
@@ -8539,6 +8647,53 @@ function retrieveFilesList (targetItem, filesList, isUserSortOrder, excludedPare
         filesList.push (targetItem);
     }
     return true;
+}
+
+function tsSortFilesList (targetFolder, filesList, isTargetFolders) {
+    var tsSortFile = new File (targetFolder.fsName.replace(/\\/g, "/") + "/ts_sort.txt");
+    if (tsSortFile.exists) {
+        var sortFileContent = readFile (tsSortFile);
+        if (sortFileContent) {
+            var sortList = '';
+            if (sortFileContent.indexOf ('\r\n') != -1) {
+                sortList = sortFileContent.split ('\r\n');
+            }
+            else {
+                sortList = sortFileContent.split ('\n');
+            }
+            if (sortList) {
+                var sortIndex = 0;
+                for (var sl = 0; sl < sortList.length; sl++) {
+                    var pureFileName = sortList[sl];
+                    for (var fl = sortIndex; fl < filesList.length; fl++) {
+                        var testedName = File.decode (filesList[fl].name);
+                        if (filesList[fl] instanceof File) {
+                            if (isTargetFolders) {
+                                continue;
+                            }
+                            testedName = tsGetPureName (testedName, false);
+                        }
+                        else {
+                            if (isTargetFolders == false) {
+                                continue;
+                            }
+                        }
+                        if (testedName == pureFileName) {
+                            if (fl != sortIndex) {
+                                var swapCell = filesList[fl];
+                                filesList[fl] = filesList[sortIndex];
+                                filesList[sortIndex] = swapCell;
+                            }
+                            sortIndex++;
+                            break;
+                        }
+                    }
+                }
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 function retrieveFilesListWithSubs (targetItem, filesListWithSubs, subFolders, selectedName) {
@@ -9829,6 +9984,19 @@ function tsInitialize () {
         app.preferences.Label5 = "Final";
     }
 
+    //Copying Initial files
+    var interfaceMainSourceFolder = Folder (File($.fileName).parent.fsName.replace(/\\/g, '/') + "/Tree Shade Resources/Initial");
+    var filesListWithSubs = new Array;
+    retrieveFilesListWithSubs (interfaceMainSourceFolder, filesListWithSubs, "", "");
+    for (var flws = 0; flws < filesListWithSubs.length; flws++) {
+        var theDesFullPath = tsRootFolderPath + "/Workshop/Initial/";
+        if (filesListWithSubs[flws][1] != "") {
+            theDesFullPath += filesListWithSubs[flws][1] + "/";
+        }
+        theDesFullPath += File.decode (filesListWithSubs[flws][0].name);
+        tsChangeFile (filesListWithSubs[flws][0], File (theDesFullPath), true, 1, false);
+    }
+
     //Copying node.js Interface Files
     var isToCopyInterfaceMain = false;
     var isToCopyInterfaceForm = false;
@@ -10034,8 +10202,9 @@ function tsInitialize () {
         tsChangeShortcuts = tsChangeShortcuts.split ("\n");
     }
     else {
-        tsChangeShortcuts = ["u Update Brothers: .$/ID*<CO>",
-                             "d Add Display Part: ./<FN><RN/$/ [Label]>"
+        tsChangeShortcuts = ["c Copy Picked Files and Folders Here: .$/<L><D>",
+                             "m Move Picked Files and Folders Here: .$/<L>",
+                             "b Move Back: ..$/<L>"
                             ];
     }
     okNowYouCanQuit = false;
@@ -10158,6 +10327,7 @@ function solveSourcePath (targetFile, relationPath) {
     if (relationPath.search (/<FD>/i) != -1) {
         var targetName = File.decode (targetFile.name);
         targetName = tsGetDisplayName (targetName);
+        if (targetName == null) targetName = '';
         relationPath = relationPath.replace(/<FD>/gi, targetName);
     }
     if (relationPath.search (/<FN>/i) != -1) {
@@ -12691,6 +12861,7 @@ function tsMainTask () {
                                     if (relationPath.search (/<FD>/i) != -1) {
                                         var targetName = File.decode (targetFile.name);
                                         targetName = tsGetDisplayName (targetName);
+                                        if (targetName == null) targetName = '';
                                         relationPath = relationPath.replace(/<FD>/gi, targetName);
                                     }
                                     if (relationPath.search (/<FN>/i) != -1) {

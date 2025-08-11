@@ -1,0 +1,4 @@
+::./<FN>/Text*:Place:[ ]::Link<ASM>_Location:Para::Link<ASM>:Obj::./<FN>/Code*:Obj:
+<div class="link" data-fi="<fi>">
+<a href="<ts>./<FN>/URL.+<Place></ts>"><ts>./<FN>/Text.+<Place></ts></a>
+</div>

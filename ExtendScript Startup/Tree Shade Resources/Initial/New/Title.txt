@@ -1,0 +1,11 @@
+::./<FN>/*<ASM>*:Place::Title<FL><Shift-1><ASM><BO>Title<ASM>:Para:
+<div class="title" id="title_<fh>" data-fi="<fi>">
+<h<id#level>>
+    <span class="lang en">
+        <ts><id#en/\r?\n><p><row></p></ts><ts><id_en>./<FN>/.+hdn_en.+<Place></ts>
+    </span>
+    <span class="lang ar">
+        <ts><id#ar/\r?\n><p><row></p></ts><ts><id_ar>./<FN>/.+hdn_ar.+<Place></ts>
+    </span>
+</h<id#level>>
+</div><ts><id_level><fl>-1<Eval></ts>

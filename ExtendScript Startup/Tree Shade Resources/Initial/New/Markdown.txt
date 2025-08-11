@@ -1,0 +1,5 @@
+::./<FN>/*<ASM>*:Place:\r::Body<ASM><BO>Body:Para::Replace:\n:\r:://Workshop/Initial/Scripts/Markdown*:Para Code:
+<div class="markdownBlock" data-fi="<fi>">
+    <ts>./<FN>/English Output.+<place></ts>
+    <ts>./<FN>/Arabic Output.+<place></ts>
+</div>

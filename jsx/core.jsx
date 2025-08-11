@@ -45,6 +45,7 @@ var autoUpdateLinksRecordsInterval = 1;
 var autoUpdateLinksRecordsStep = 0;
 var snippetFilePath_ID_List = new Array;
 var bridgeScanningQueue = new Array;
+var tsPlaceSelectionAndFileAndDoc = null;
 var bridgeScanningStep = 0;
 var tsDynamicSnippetTag = "::";
 var tsEditText = null;
@@ -98,9 +99,8 @@ function addToBridgeScanningQueue (fullPath) {
 function installStartupScripts (extensionPath, userDataPath, userDocumentsPath, hostApplicationPath, senderLOADorBUTTON)
 { 
     //determining os
-    var bridgeStartupFileName = "Tree Shade Bridge Mac.jsx";
+    var bridgeStartupFileName = "Tree Shade Bridge.jsx";
     if ($.os.indexOf ("Macintosh") != 0) {
-        var bridgeStartupFileName = "Tree Shade Bridge Win.jsx";
         hostApplicationPath = hostApplicationPath.slice (0, hostApplicationPath.lastIndexOf ("/"));
     }
     var isUpdated = false;
@@ -1155,6 +1155,11 @@ function initiateSettingHandler () {
     savedDocIdleTask = app.idleTasks.add ();
     savedDocIdleTask.eventListeners.add("onIdle", savedDocIdleTaskHandler); 
     savedDocIdleTask.sleep = 2000;
+
+    var tsPlaceSelectionAndFileAndDocTask = app.idleTasks.add ();
+    tsPlaceSelectionAndFileAndDocTask.eventListeners.add("onIdle", tsPlaceSelectionAndFileAndDocHandler); 
+    tsPlaceSelectionAndFileAndDocTask.sleep = 500;
+
     //set linking Preferences
     app.linkingPreferences.checkLinksAtOpen = false;
     app.linkingPreferences.findMissingLinksAtOpen = false;
@@ -1975,6 +1980,16 @@ function getWorkshopVersionInfo (targetFile, fileID) {
         }
     }
     return null;
+}
+
+function tsPlaceSelectionAndFileAndDocHandler (myEvent) {
+    if (tsPlaceSelectionAndFileAndDoc) {
+        if (tsPlaceSelectionAndFileAndDoc[0] && tsPlaceSelectionAndFileAndDoc[1] && tsPlaceSelectionAndFileAndDoc[2]) {
+            var thisPathAndName = getPathAndName (tsPlaceSelectionAndFileAndDoc[2], tsPlaceSelectionAndFileAndDoc[1]);
+            tsPlaceLiveSnippet (tsPlaceSelectionAndFileAndDoc[0], null, thisPathAndName, tsPlaceSelectionAndFileAndDoc[2], tsPlaceSelectionAndFileAndDoc[1], null, false, true, [], [], -1, -1, []);
+        }
+        tsPlaceSelectionAndFileAndDoc = null;
+    }
 }
 
 function savedDocIdleTaskHandler (myEvent) {
@@ -3361,11 +3376,13 @@ function linkPlaceHandler (myEvent) {
         if (myEvent.parent.placeGuns.pageItems[c].parentStory) {
             if (myEvent.parent.placeGuns.pageItems[c].parentStory.itemLink) {
                 if (app.selection.length == 1) {
+                    tsPlaceSelectionAndFileAndDoc = new Array;
+                    tsPlaceSelectionAndFileAndDoc.push (app.selection[0]);
                     var snippetFullPath = preparePath (myEvent.parent.placeGuns.pageItems[c].parentStory.itemLink.filePath);
                     myEvent.parent.placeGuns.pageItems[c].parentStory.remove ();
                     var toPlaceSnippetFile = new File (snippetFullPath);
-                    var thisPathAndName = getPathAndName (myEvent.parent, toPlaceSnippetFile);
-                    tsPlaceLiveSnippet (app.selection[0], null, thisPathAndName, myEvent.parent, toPlaceSnippetFile, null, false, true, [], [], -1, -1, []);
+                    tsPlaceSelectionAndFileAndDoc.push (toPlaceSnippetFile);
+                    tsPlaceSelectionAndFileAndDoc.push (myEvent.parent);
                     break;
                 }
             }
@@ -6287,7 +6304,7 @@ function newDynamicLiveSnippet (targetDocument, nestedMarkers, dynamicLiveSnippe
                                                "<.>: Snippet parent folder name. add dots for parent of parent...",
                                                "To reference to the document instead of the snippet file write like this '.$/' or '<.$>'...",
                                                "Also use these tags with path:",
-                                               "<File_Branch>, <File_Name>, <Original_File_Name>, <Previous_File_Name>,",
+                                               "<File_Branch>, <File_Name>, <File_Display>, <Original_File_Name>, <Previous_File_Name>,",
                                                "<Container_File_Branch>, <Container_File_Name>, <File_Level>, <Doc_Name>, <Doc_Order>, <Page_Num>,",
                                                "<Applied_Section_Prefix>, <Applied_Section_Marker>, <Master_Prefix>, <Master_Name>,",
                                                "<Master_Full_Name>, <Char_Order>, <Anchored_Order>, <Para_Order>, <Para_First>, <Para_Before>,",
@@ -6376,7 +6393,7 @@ function dynamicStyleSelected(selectedObjectAndisForcibly) {
                                      "<.>: Snippet parent folder name. add dots for parent of parent...",
                                      "To reference to the document instead of the snippet file write like this '.$/' or '<.$>'...",
                                      "Also use these tags with path:",
-                                     "<File_Branch>, <File_Name>, <Original_File_Name>, <Previous_File_Name>,",
+                                     "<File_Branch>, <File_Name>, <File_Display>, <Original_File_Name>, <Previous_File_Name>,",
                                      "<Container_File_Branch>, <Container_File_Name>, <File_Level>, <Doc_Name>, <Doc_Order>,",
                                      "<Page_Num>, <Applied_Section_Prefix>, <Applied_Section_Marker>, <Master_Prefix>, <Master_Name>,",
                                      "<Master_Full_Name>, <Char_Order>, <Anchored_Order>, <Para_Order>, <Para_First>,",
@@ -6442,7 +6459,7 @@ function dynamicReplaceSelected(selectedObjectAndisForcibly) {
                                      "<.>: Snippet parent folder name. add dots for parent of parent...",
                                      "To reference to the document instead of the snippet file write like this '.$/' or '<.$>'...",
                                      "Also use these tags with path:",
-                                     "<File_Branch>, <File_Name>, <Original_File_Name>, <Previous_File_Name>,",
+                                     "<File_Branch>, <File_Name>, <File_Display>, <Original_File_Name>, <Previous_File_Name>,",
                                      "<Container_File_Branch>, <Container_File_Name>, <File_Level>, <Doc_Name>, <Doc_Order>,",
                                      "<Page_Num>, <Applied_Section_Prefix>, <Applied_Section_Marker>, <Master_Prefix>, <Master_Name>,",
                                      "<Master_Full_Name>, <Char_Order>, <Anchored_Order>, <Para_Order>, <Para_First>,",
@@ -8168,6 +8185,7 @@ function solveAbbreviation (text) {
     text = text.replace(/<CFB>/gi, "<Container_File_Branch>");
     text = text.replace(/<CFN>/gi, "<Container_File_Name>"); 
     text = text.replace(/<FL>/gi, "<File_Level>");
+    text = text.replace(/<FD>/gi, "<File_Display>");
     text = text.replace(/<DN>/gi, "<Doc_Name>");
     text = text.replace(/<DO>/gi, "<Doc_Order>");
     text = text.replace(/<PN>/gi, "<Page_Num>");
@@ -8349,6 +8367,16 @@ function solveDynamicLiveSnippetPhrase (targetDocument, snippetFile, startInsert
                 if (snippetFile.exists) {
                     var pureName = File.decode (snippetFile.name);
                     dynamicLiveSnippetPath = solveSnippetName (dynamicLiveSnippetPath, "File_Name", pureName);
+                }
+            }
+        }
+    }
+    if (dynamicLiveSnippetPath.search (/<File_Display>/i) != -1) {
+        if (snippetFile) {
+            if (snippetFile instanceof File) {
+                if (snippetFile.exists) {
+                    var pureName = File.decode (snippetFile.name);
+                    dynamicLiveSnippetPath = dynamicLiveSnippetPath.replace(/<File_Display>/gi, getPureDisplayName (pureName));
                 }
             }
         }
@@ -10466,7 +10494,7 @@ function updateInstance (targetDocument, snippetFile, nestedMarkers, isForcibly,
                                             var theOuterBoundsHeight = theOuterBounds[2] - theOuterBounds[0];
                                             outerFrame.geometricBounds = [theOuterBounds[0], theOuterBounds[1], theOuterBounds[2] + theOuterBoundsHeight, theOuterBounds[3] + theOuterBoundsWidth];
                                         }
-                                        pageItemsIDs.push ([outerFrame.id, true]);
+                                        pageItemsIDs.push ([outerFrame.id, true, false]);
                                     }
                                     targetInsertionPoint = outerFrame.insertionPoints.item (0);
                                 }
@@ -10528,7 +10556,7 @@ function updateInstance (targetDocument, snippetFile, nestedMarkers, isForcibly,
                                     listFrame.geometricBounds = [theBounds[0], theBounds[1], theBounds[2] + theBoundsHeight, theBounds[3] + theBoundsWidth];
                                 }
                                 targetInsertionPoint = listFrame.insertionPoints.item (-1);
-                                pageItemsIDs.push ([listFrame.id, true]);
+                                pageItemsIDs.push ([listFrame.id, true, false]);
                             }
                             else if (!isCellsSeparator && !isThereOuterFrame) {
                                 targetInsertionPoint = instanceStory.insertionPoints.item (startIndex + 1);
@@ -10590,6 +10618,9 @@ function updateInstance (targetDocument, snippetFile, nestedMarkers, isForcibly,
                                 if (fileDisplayName.slice(fileDisplayName.lastIndexOf (".")) == ".idms") {
                                     isToUpdateNested = true;
                                 }
+                                if (isCellsSeparator && cellsList[theCellIndex].contents == "") {
+                                    cellsList[theCellIndex].contents = " ";
+                                }
                                 var preIndex = targetInsertionPoint.index;
                                 try {
                                     targetInsertionPoint.place (dynamicLiveSnippetFiles[dlsf])[0];
@@ -10599,7 +10630,12 @@ function updateInstance (targetDocument, snippetFile, nestedMarkers, isForcibly,
                                 if (preIndex + 1 == targetInsertionPoint.index) {
                                     if (targetInsertionPoint.parent.characters.item (preIndex).pageItems.length > 0) {
                                         targetInsertionPoint.parent.characters.item (preIndex).pageItems[0].appliedObjectStyle = targetDocument.objectStyles.itemByName("Snippet Temporarily Anchored");
-                                        pageItemsIDs.push ([targetInsertionPoint.parent.characters.item (preIndex).pageItems[0].id, false]);
+                                        if (isCellsSeparator) {
+                                            pageItemsIDs.push ([targetInsertionPoint.parent.characters.item (preIndex).pageItems[0].id, false, true, targetInsertionPoint.parent.characters.item (preIndex).pageItems[0]]);
+                                        }
+                                        else {
+                                            pageItemsIDs.push ([targetInsertionPoint.parent.characters.item (preIndex).pageItems[0].id, false, false]);
+                                        }
                                     }
                                 }
                                 isPlacedBefore = true;
@@ -11110,11 +11146,16 @@ function sortTextItems (textRange, pageItemsIDs, isOnlyFrames) {
         else if (isOnlyFrames == false && pageItemsIDs[pii][1]) {
             continue;
         }
-        for (var ind = indexes.length - 1; ind >= 0; ind--) {
-            if (pageItemsIDs[pii][0] == textRange.pageItems[indexes[ind]].id) {
-                textItemsPairs.push ([textRange.pageItems[indexes[ind]], pageItemsIDs[pii][1]]);
-                indexes.splice (ind, 1);
-                break;
+        if (pageItemsIDs[pii][2]) {
+            textItemsPairs.push ([pageItemsIDs[pii][3], pageItemsIDs[pii][1]]);
+        }
+        else {
+            for (var ind = indexes.length - 1; ind >= 0; ind--) {
+                if (pageItemsIDs[pii][0] == textRange.pageItems[indexes[ind]].id) {
+                    textItemsPairs.push ([textRange.pageItems[indexes[ind]], pageItemsIDs[pii][1]]);
+                    indexes.splice (ind, 1);
+                    break;
+                }
             }
         }
     }
@@ -11184,892 +11225,9 @@ function applyDynamicStyle (dynamicStylePhrase, targetDocument, snippetFile, sta
             if (tempSplit.length > 1) {
                 removeStyle = tempSplit[1];
             }
-        }        
-        if (dynamicStyleMethod.search (/Para/i) != -1) {
-            var targetText = startInsertionPoint;
-            if (textRange != false) {
-                if (isRIE) {
-                    if (textRange == null || textRange.contents == "") {
-                        if (removeStyle != "") {
-                            newStyleName = removeStyle;
-                        }
-                        else {
-                            var thisPara = startInsertionPoint.paragraphs.item (0);
-                            var previousPara = null;
-                            if (thisPara.characters.item (-1).contents != "\r") {
-                                previousPara = thisPara.parent.paragraphs.previousItem(thisPara);
-                            }
-                            if (previousPara != null) {
-                                thisPara.parent.characters.itemByRange (previousPara.characters.item (-1), thisPara.characters.item (-1)).remove ();
-                            }
-                            else {
-                                thisPara.remove ();
-                            }
-                            return false;
-                        }
-                    }
-                }
-                if (textRange != null) {
-                    targetText = textRange;
-                }
-            }
-            if (newStyleName) {
-                var newStyle = null;
-                if (dynamicStyleMethod.search (/Code/i) != -1 || newStyleName.search (/\/\/Code/i) == 0 || newStyleName.search (/\/\*code\*\//i) == 0) {
-                    newStyle = newStyleName;
-                }
-                else if (newStyleName) {
-                    newStyle = targetDocument.paragraphStyles.itemByName (newStyleName);
-                    if (newStyle == null) { // Create new style
-                        newStyle = targetDocument.paragraphStyles.add({name: newStyleName});
-                        if (newBasedOnStyleName != "") {
-                            var newBasedOnStyle = targetDocument.paragraphStyles.itemByName (newBasedOnStyleName);
-                            if (newBasedOnStyle == null) {
-                                newBasedOnStyle = targetDocument.paragraphStyles.add({name: newBasedOnStyleName});
-                            }
-                            if (newStyle.name != newBasedOnStyle.name) {
-                                newStyle.basedOn = newBasedOnStyle;
-                            }
-                        }
-                        var expectedCellStyle = targetDocument.cellStyles.itemByName (newStyleName);
-                        if (expectedCellStyle != null) {
-                            expectedCellStyle.appliedParagraphStyle = newStyle;
-                        }
-                        var expectedObjectStyle = targetDocument.objectStyles.itemByName (newStyleName);
-                        if (expectedObjectStyle != null) {
-                            expectedObjectStyle.appliedParagraphStyle = newStyle;
-                        }
-                    }    
-                }
-                if (newStyle != null) {
-                    var targetIndex = 0;
-                    var isPositive = true;
-                    var isFromLast = false;
-                    var isEvenOnly = null;
-                    var appliedCounter = 0;
-                    if (dynamicStyleMethod.search (/For[+-]?\d+[A-Z]?/i) != -1) {
-                        var theNum = dynamicStyleMethod.match (/For[+-]?\d+[A-Z]?/i);
-                        if (theNum != null && theNum.length > 0) {
-                            theNum = theNum[0].slice (3);
-                            if (theNum[0] == '+' || theNum[0] == '-') {
-                                if (theNum[0] == '+') {
-                                    isPositive = true;
-                                }
-                                else {
-                                    isPositive = false;
-                                }
-                                theNum = theNum.slice (1);
-                            }
-                            else {
-                                isPositive = null;
-                            }
-                            targetIndex = parseInt (theNum, 10) - 1;
-                            if (theNum.search (/L/i) != -1) {
-                                isFromLast = true;
-                            }
-                            if (theNum.search (/E/i) != -1) {
-                                isEvenOnly = true;
-                            }
-                            else if (theNum.search (/O/i) != -1) {
-                                isEvenOnly = false;
-                            }
-                        }
-                    }
-                    if (isFromLast) {
-                        targetIndex = targetText.paragraphs.length - targetIndex - 1;
-                    }
-                    var parasArr = [];
-                    for (var trs = 0; trs < targetText.paragraphs.length; trs++) {
-                        if (targetIndex != null) {
-                            if (isPositive == true && trs < targetIndex) {
-                                continue;
-                            }
-                            else if (isPositive == false && trs > targetIndex) {
-                                continue;
-                            }
-                            else if (isPositive == null && trs != targetIndex) {
-                                continue;
-                            }
-                        }
-                        appliedCounter++;
-                        if (isEvenOnly == true && (appliedCounter % 2 == 1)) {
-                            continue;
-                        }
-                        if (isEvenOnly == false && (appliedCounter % 2 == 0)) {
-                            continue;
-                        }
-                        if (targetText.paragraphs[trs].appliedParagraphStyle) {
-                            if (targetText.paragraphs[trs].appliedParagraphStyle.constructor.name === "Array") {
-                                if (targetText.paragraphs[trs].appliedParagraphStyle.length > 0) {
-                                    if (targetText.paragraphs[trs].appliedParagraphStyle[0].name) {
-                                        if (targetText.paragraphs[trs].appliedParagraphStyle[0].name.search(/\^$/) != -1) {
-                                            var isToContinue = true;
-                                            if (newStyleName.search(/\^$/) != -1) {
-                                                var toBeAppliedCount = newStyleName.match (/\^+$/)[0].length;
-                                                var destinationCount = targetText.paragraphs[trs].appliedParagraphStyle[0].name.match (/\^+$/)[0].length;
-                                                if (toBeAppliedCount > destinationCount) {
-                                                    isToContinue = false;
-                                                }
-                                            }
-                                            if (isToContinue) {
-                                                continue;
-                                            }
-                                        }
-                                    }
-                                }
-                            } else if (targetText.paragraphs[trs].appliedParagraphStyle.name) {
-                                if (targetText.paragraphs[trs].appliedParagraphStyle.name.search(/\^$/) != -1) {
-                                    var isToContinue = true;
-                                    if (newStyleName.search(/\^$/) != -1) {
-                                        var toBeAppliedCount = newStyleName.match (/\^+$/)[0].length;
-                                        var destinationCount = targetText.paragraphs[trs].appliedParagraphStyle.name.match (/\^+$/)[0].length;
-                                        if (toBeAppliedCount > destinationCount) {
-                                            isToContinue = false;
-                                        }
-                                    }
-                                    if (isToContinue) {
-                                        continue;
-                                    }
-                                }
-                            }
-                        }
-                        if (dynamicStyleMethod.search (/Code/i) != -1 || newStyleName.search (/\/\/Code/i) == 0 || newStyleName.search (/\/\*code\*\//i) == 0) {
-                            parasArr.push (targetText.paragraphs[trs]);
-                        }
-                        else {
-                            targetText.paragraphs[trs].appliedParagraphStyle = newStyle;
-                        }
-                    }
-                    if (parasArr.length > 0) {
-                        var wrappedCode =
-                            "var paras = context[0];\n" +
-                            "var doc = context[1];\n" +
-                            "var file = context[2];\n" +
-                            "var level = context[3];\n" +
-                            "var frame = null;\n" +
-                            newStyleName;
-                        var customFun = new Function("context", wrappedCode);
-                        var codeFile = null;
-                        if (dynamicStyleFiles instanceof Array) {
-                            if (dynamicStyleFiles.length > 0) {
-                                codeFile = dynamicStyleFiles[0];
-                            }
-                        }
-                        var fileLevel = 0;
-                        if (liveSnippetID.lastIndexOf ("/") > 0) {
-                            fileLevel = liveSnippetID.split ("/").length - 1;
-                        }
-                        app.doScript (customFun, ScriptLanguage.JAVASCRIPT, [parasArr, targetDocument, codeFile, fileLevel], UndoModes.ENTIRE_SCRIPT, "User Code");
-
-                    }
-                }
-            }
-        }
-        if (dynamicStyleMethod.search (/Char/i) != -1) {
-            var targetText = startInsertionPoint;
-            if (textRange != false && textRange != null) {
-                targetText = textRange;
-            }
-            var newStyle = targetDocument.characterStyles.itemByName (newStyleName);
-            if (newStyle == null) { // Create new style
-                newStyle = targetDocument.characterStyles.add({name: newStyleName});
-                if (newBasedOnStyleName != "") {
-                    var newBasedOnStyle = targetDocument.characterStyles.itemByName (newBasedOnStyleName);
-                    if (newBasedOnStyle == null) {
-                        newBasedOnStyle = targetDocument.characterStyles.add({name: newBasedOnStyleName});
-                    }
-                    if (newStyle.name != newBasedOnStyle.name) {
-                        newStyle.basedOn = newBasedOnStyle;
-                    }
-                }
-            }
-            if (newStyle != null) {
-                targetText.appliedCharacterStyle = newStyle;
-            }
-        }
-        if (dynamicStyleMethod.search (/Obj/i) != -1) {
-            if (isRIE && textRange != false) {
-                if (textRange == null || textRange.contents == "") {
-                    if (removeStyle != "") {
-                        newStyleName = removeStyle;
-                    }
-                    else {
-                        if (dynamicStyleMethod.search (/Location/i) != -1) {
-                            var parentFrame = startInsertionPoint.parentTextFrames[0];
-                            var theParent = parentFrame.parent;
-                            do {
-                                if (theParent.constructor.name == "Character") {
-                                    if (theParent.paragraphs.length > 0) {
-                                        var toRemovePara = theParent.paragraphs.item(0);
-                                        var previousPara = null;
-                                        if (toRemovePara.characters.item (-1).contents != "\r") {
-                                            previousPara = toRemovePara.parent.paragraphs.previousItem(toRemovePara);
-                                        }
-                                        toRemovePara.remove ();
-                                        if (previousPara != null) {
-                                            previousPara.characters.item (-1).remove ();
-                                        }
-                                        return false;
-                                    }
-                                }
-                                theParent = theParent.parent;
-                            } while (theParent.constructor.name != "Spread" && theParent.constructor.name != "MasterSpread" && theParent.constructor.name != "Page" && theParent.constructor.name != "Document");
-                        }
-                        parentFrame.remove ();
-                        return false;
-                    }
-                }
-            }
-            var newStyle = null;
-            if (dynamicStyleMethod.search (/Code/i) != -1 || newStyleName.search (/\/\/Code/i) == 0 || newStyleName.search (/\/\*code\*\//i) == 0) {
-                newStyle = newStyleName;
-            }
-            else if (newStyleName) {
-                newStyle = targetDocument.objectStyles.itemByName (newStyleName);
-                if (newStyle == null) { // Create new style
-                    newStyle = targetDocument.objectStyles.add({name: newStyleName});
-                    if (newBasedOnStyleName != "") {
-                        var newBasedOnStyle = targetDocument.objectStyles.itemByName (newBasedOnStyleName);
-                        if (newBasedOnStyle == null) {
-                            newBasedOnStyle = targetDocument.objectStyles.add({name: newBasedOnStyleName});
-                        }
-                        if (newStyle.name != newBasedOnStyle.name) {
-                            newStyle.basedOn = newBasedOnStyle;
-                        }
-                    }
-                    var expectedParagraphStyle = targetDocument.paragraphStyles.itemByName (newStyleName);
-                    if (expectedParagraphStyle != null) {
-                        newStyle.appliedParagraphStyle = expectedParagraphStyle;
-                    }
-                }
-            }
-            if (textRange != false) {
-                if (newStyle != null && textRange != null) {
-                    var targetIndex = null;
-                    var isPositive = null;
-                    var isFromLast = false;
-                    var isEvenOnly = null;
-                    var appliedCounter = 0;
-                    var isOnlyFrames = null;
-                    if (dynamicStyleMethod.search (/For[+-]?\d+[A-Z]?/i) != -1) {
-                        var theNum = dynamicStyleMethod.match (/For[+-]?\d+[A-Z]?/i);
-                        if (theNum != null && theNum.length > 0) {
-                            theNum = theNum[0].slice (3);
-                            if (theNum[0] == '+' || theNum[0] == '-') {
-                                if (theNum[0] == '+') {
-                                    isPositive = true;
-                                }
-                                else {
-                                    isPositive = false;
-                                }
-                                theNum = theNum.slice (1);
-                            }
-                            targetIndex = parseInt (theNum, 10) - 1;
-                            if (theNum.search (/L/i) != -1) {
-                                isFromLast = true;
-                            }
-                            if (theNum.search (/T/i) != -1) {
-                                isOnlyFrames = true;
-                            }
-                            else if (theNum.search (/P/i) != -1) {
-                                isOnlyFrames = false;
-                            }
-                            if (theNum.search (/E/i) != -1) {
-                                isEvenOnly = true;
-                            }
-                            else if (theNum.search (/O/i) != -1) {
-                                isEvenOnly = false;
-                            }
-                        }
-                    }
-                    var textItemsPairs = sortTextItems (textRange, pageItemsIDs, isOnlyFrames);
-                    if (isFromLast) {
-                        targetIndex = textItemsPairs.length - targetIndex - 1;
-                    }
-                    for (var tris = 0; tris < textItemsPairs.length; tris++) {
-                        if (targetIndex != null) {
-                            if (isPositive == true && tris < targetIndex) {
-                                continue;
-                            }
-                            else if (isPositive == false && tris > targetIndex) {
-                                continue;
-                            }
-                            else if (isPositive == null && tris != targetIndex) {
-                                continue;
-                            }
-                        }
-                        appliedCounter++;
-                        if (isEvenOnly == true && (appliedCounter % 2 == 1)) {
-                            continue;
-                        }
-                        else if (isEvenOnly == false && (appliedCounter % 2 == 0)) {
-                            continue;
-                        }
-                        if (dynamicStyleMethod.search (/Code/i) != -1 || newStyleName.search (/\/\/Code/i) == 0 || newStyleName.search (/\/\*code\*\//i) == 0) {
-                            var wrappedCode =
-                                "var frame = context[0];\n" +
-                                "var doc = context[1];\n" +
-                                "var file = context[2];\n" +
-                                "var level = context[3];\n" +
-                                "var paras = null;\n" +
-                                newStyleName;
-                            var customFun = new Function("context", wrappedCode);
-                            var codeFile = null;
-                            if (dynamicStyleFiles instanceof Array) {
-                                if (dynamicStyleFiles.length > 0) {
-                                    codeFile = dynamicStyleFiles[0];
-                                }
-                            }
-                            var fileLevel = 0;
-                            if (liveSnippetID.lastIndexOf ("/") > 0) {
-                                fileLevel = liveSnippetID.split ("/").length - 1;
-                            }
-                            app.doScript (customFun, ScriptLanguage.JAVASCRIPT, [textItemsPairs[tris][0], targetDocument, codeFile, fileLevel], UndoModes.ENTIRE_SCRIPT, "User Code");
-                        }
-                        else {
-                            textItemsPairs[tris][0].appliedObjectStyle = newStyle;
-                        }
-                    }
-                }
-            }
-            else if (newStyle != null) {
-                var parentFrame = null;
-                if (startInsertionPoint.parentTextFrames && startInsertionPoint.parentTextFrames.length > 0) {
-                    parentFrame = startInsertionPoint.parentTextFrames[0];
-                }
-                if (parentFrame != null) {
-                    if (dynamicStyleMethod.search (/Code/i) != -1) {
-                        var wrappedCode =
-                            "var frame = context[0];\n" +
-                            "var doc = context[1];\n" +
-                            "var file = context[2];\n" +
-                            "var level = context[3];\n" +
-                            "var paras = null;\n" +
-                            newStyle;
-                        var customFun = new Function("context", wrappedCode);
-                        var codeFile = null;
-                        if (dynamicStyleFiles instanceof Array) {
-                            if (dynamicStyleFiles.length > 0) {
-                                codeFile = dynamicStyleFiles[0];
-                            }
-                        }
-                        var fileLevel = 0;
-                        if (liveSnippetID.lastIndexOf ("/") > 0) {
-                            fileLevel = liveSnippetID.split ("/").length - 1;
-                        }
-                        app.doScript (customFun, ScriptLanguage.JAVASCRIPT, [parentFrame, targetDocument, codeFile, fileLevel], UndoModes.ENTIRE_SCRIPT, "User Code");
-                    }
-                    else {
-                        parentFrame.appliedObjectStyle = newStyle;
-                    }
-                }
-            }
-        }
-        if (dynamicStyleMethod.search (/Table/i) != -1) {
-            if (textRange != false && isRIE) {
-                if (textRange == null || textRange.contents == "") {
-                    if (removeStyle != "") {
-                        newStyleName = removeStyle;
-                    }
-                    else {
-                        startInsertionPoint.parent.parentRow.parent.remove ();
-                        return false;
-                    }
-                }
-            }
-            if (newStyleName) {
-                var newStyle = targetDocument.tableStyles.itemByName (newStyleName);
-                if (newStyle == null) { // Create new style
-                    newStyle = targetDocument.tableStyles.add({name: newStyleName});
-                    if (newBasedOnStyleName != "") {
-                        var newBasedOnStyle = targetDocument.tableStyles.itemByName (newBasedOnStyleName);
-                        if (newBasedOnStyle == null) {
-                            newBasedOnStyle = targetDocument.tableStyles.add({name: newBasedOnStyleName});
-                        }
-                        if (newStyle.name != newBasedOnStyle.name) {
-                            newStyle.basedOn = newBasedOnStyle;
-                        }
-                    }
-                    var bodyCellStyleName = newStyleName + dynamicStyleSeparator + "Body";
-                    var expectedBodyCellStyle = targetDocument.cellStyles.itemByName (bodyCellStyleName);
-                    if (expectedBodyCellStyle == null) { // Create new style
-                        expectedBodyCellStyle = targetDocument.cellStyles.add({name: bodyCellStyleName});
-                        if (newBasedOnStyleName != "") {
-                            var newBasedOnStyle = targetDocument.cellStyles.itemByName (newBasedOnStyleName + dynamicStyleSeparator + "Body");
-                            if (newBasedOnStyle != null) {
-                                expectedBodyCellStyle.basedOn = newBasedOnStyle;
-                            }
-                        }
-                        var expectedParaStyle = targetDocument.paragraphStyles.itemByName (bodyCellStyleName);
-                        if (expectedParaStyle == null) {
-                            expectedParaStyle = targetDocument.paragraphStyles.add({name: bodyCellStyleName});
-                            if (newBasedOnStyleName != "") {
-                                var newBasedOnStyle = targetDocument.paragraphStyles.itemByName (newBasedOnStyleName + dynamicStyleSeparator + "Body");
-                                if (newBasedOnStyle != null) {
-                                    expectedParaStyle.basedOn = newBasedOnStyle;
-                                }
-                            }
-                        }
-                        if (expectedParaStyle != null) {
-                            expectedBodyCellStyle.appliedParagraphStyle = expectedParaStyle;
-                        }
-                    }
-                    if (expectedBodyCellStyle != null) {
-                        newStyle.bodyRegionCellStyle = expectedBodyCellStyle;
-                    }
-                    var headerCellStyleName = newStyleName + dynamicStyleSeparator + "Header";
-                    var expectedHeaderCellStyle = targetDocument.cellStyles.itemByName (headerCellStyleName);
-                    if (expectedHeaderCellStyle == null) { // Create new style
-                        expectedHeaderCellStyle = targetDocument.cellStyles.add({name: headerCellStyleName});
-                        if (newBasedOnStyleName != "") {
-                            var newBasedOnStyle = targetDocument.cellStyles.itemByName (newBasedOnStyleName + dynamicStyleSeparator + "Header");
-                            if (newBasedOnStyle != null) {
-                                expectedHeaderCellStyle.basedOn = newBasedOnStyle;
-                            }
-                        }
-                        var expectedParaStyle = targetDocument.paragraphStyles.itemByName (headerCellStyleName);
-                        if (expectedParaStyle == null) {
-                            expectedParaStyle = targetDocument.paragraphStyles.add({name: headerCellStyleName});
-                            if (newBasedOnStyleName != "") {
-                                var newBasedOnStyle = targetDocument.paragraphStyles.itemByName (newBasedOnStyleName + dynamicStyleSeparator + "Header");
-                                if (newBasedOnStyle != null) {
-                                    expectedParaStyle.basedOn = newBasedOnStyle;
-                                }
-                            }
-                        }
-                        if (expectedParaStyle != null) {
-                            expectedHeaderCellStyle.appliedParagraphStyle = expectedParaStyle;
-                        }
-                    }
-                    if (expectedHeaderCellStyle != null) {
-                        newStyle.headerRegionCellStyle = expectedHeaderCellStyle;
-                    }
-                    var footerCellStyleName = newStyleName + dynamicStyleSeparator + "Footer";
-                    var expectedFooterCellStyle = targetDocument.cellStyles.itemByName (footerCellStyleName);
-                    if (expectedFooterCellStyle == null) { // Create new style
-                        expectedFooterCellStyle = targetDocument.cellStyles.add({name: footerCellStyleName});
-                        if (newBasedOnStyleName != "") {
-                            var newBasedOnStyle = targetDocument.cellStyles.itemByName (newBasedOnStyleName + dynamicStyleSeparator + "Footer");
-                            if (newBasedOnStyle != null) {
-                                expectedFooterCellStyle.basedOn = newBasedOnStyle;
-                            }
-                        }
-                        var expectedParaStyle = targetDocument.paragraphStyles.itemByName (footerCellStyleName);
-                        if (expectedParaStyle == null) {
-                            expectedParaStyle = targetDocument.paragraphStyles.add({name: footerCellStyleName});
-                            if (newBasedOnStyleName != "") {
-                                var newBasedOnStyle = targetDocument.paragraphStyles.itemByName (newBasedOnStyleName + dynamicStyleSeparator + "Footer");
-                                if (newBasedOnStyle != null) {
-                                    expectedParaStyle.basedOn = newBasedOnStyle;
-                                }
-                            }
-                        }
-                        if (expectedParaStyle != null) {
-                            expectedFooterCellStyle.appliedParagraphStyle = expectedParaStyle;
-                        }
-                    }
-                    if (expectedFooterCellStyle != null) {
-                        newStyle.footerRegionCellStyle = expectedFooterCellStyle;
-                    }
-                    var leftCellStyleName = newStyleName + dynamicStyleSeparator + "Left";
-                    var expectedLeftCellStyle = targetDocument.cellStyles.itemByName (leftCellStyleName);
-                    if (expectedLeftCellStyle == null) { // Create new style
-                        expectedLeftCellStyle = targetDocument.cellStyles.add({name: leftCellStyleName});
-                        if (newBasedOnStyleName != "") {
-                            var newBasedOnStyle = targetDocument.cellStyles.itemByName (newBasedOnStyleName + dynamicStyleSeparator + "Left");
-                            if (newBasedOnStyle != null) {
-                                expectedLeftCellStyle.basedOn = newBasedOnStyle;
-                            }
-                        }
-                        var expectedParaStyle = targetDocument.paragraphStyles.itemByName (leftCellStyleName);
-                        if (expectedParaStyle == null) {
-                            expectedParaStyle = targetDocument.paragraphStyles.add({name: leftCellStyleName});
-                            if (newBasedOnStyleName != "") {
-                                var newBasedOnStyle = targetDocument.paragraphStyles.itemByName (newBasedOnStyleName + dynamicStyleSeparator + "Left");
-                                if (newBasedOnStyle != null) {
-                                    expectedParaStyle.basedOn = newBasedOnStyle;
-                                }
-                            }
-                        }
-                        if (expectedParaStyle != null) {
-                            expectedLeftCellStyle.appliedParagraphStyle = expectedParaStyle;
-                        }
-                    }
-                    if (expectedLeftCellStyle != null) {
-                        newStyle.leftColumnRegionCellStyle = expectedLeftCellStyle;
-                    }
-                    var rightCellStyleName = newStyleName + dynamicStyleSeparator + "Right";
-                    var expectedRightCellStyle = targetDocument.cellStyles.itemByName (rightCellStyleName);
-                    if (expectedRightCellStyle == null) { // Create new style
-                        expectedRightCellStyle = targetDocument.cellStyles.add({name: rightCellStyleName});
-                        if (newBasedOnStyleName != "") {
-                            var newBasedOnStyle = targetDocument.cellStyles.itemByName (newBasedOnStyleName + dynamicStyleSeparator + "Right");
-                            if (newBasedOnStyle != null) {
-                                expectedRightCellStyle.basedOn = newBasedOnStyle;
-                            }
-                        }
-                        var expectedParaStyle = targetDocument.paragraphStyles.itemByName (rightCellStyleName);
-                        if (expectedParaStyle == null) {
-                            expectedParaStyle = targetDocument.paragraphStyles.add({name: rightCellStyleName});
-                            if (newBasedOnStyleName != "") {
-                                var newBasedOnStyle = targetDocument.paragraphStyles.itemByName (newBasedOnStyleName + dynamicStyleSeparator + "Right");
-                                if (newBasedOnStyle != null) {
-                                    expectedParaStyle.basedOn = newBasedOnStyle;
-                                }
-                            }
-                        }
-                        if (expectedParaStyle != null) {
-                            expectedRightCellStyle.appliedParagraphStyle = expectedParaStyle;
-                        }
-                    }
-                    if (expectedRightCellStyle != null) {
-                        newStyle.rightColumnRegionCellStyle = expectedRightCellStyle;
-                    }
-                }
-                if (newStyle != null) {
-                    if (textRange != false) {
-                        if (textRange != null) {
-                            for (var trt = 0; trt < textRange.tables.length; trt++) {
-                                textRange.tables[trt].appliedTableStyle = newStyle;
-                                textRange.tables[trt].cells.everyItem ().clearCellStyleOverrides (true);
-                                textRange.tables[trt].cells.everyItem ().paragraphs.everyItem ().clearOverrides (OverrideType.ALL);
-                            }
-                        }
-                    }
-                    else {
-                        startInsertionPoint.parent.parentRow.parent.appliedTableStyle = newStyle;
-                        startInsertionPoint.parent.parentRow.parent.cells.everyItem ().clearCellStyleOverrides (true);
-                        startInsertionPoint.parent.parentRow.parent.cells.everyItem ().paragraphs.everyItem ().clearOverrides (OverrideType.ALL);
-                    }
-                }
-            }
-        }
-        if (newStyleName == "Header" && dynamicStyleMethod.search (/Row/i) != -1) {
-            if (startInsertionPoint.parent.constructor.name == "Cell") {
-                var fatCell = startInsertionPoint.parent.rows.item (0).cells.item (0);
-                for (var cfr = 1; cfr < fatCell.rows.item (0).cells.length; cfr++) {
-                    if (fatCell.rows.item (0).cells.item (cfr).rows.length > fatCell.rows.length) {
-                        fatCell = fatCell.rows.item (0).cells.item (cfr);
-                    }
-                }
-                try {
-                    var parentTable = fatCell;
-                    while (parentTable != null && parentTable.constructor.name != "Table") {
-                        parentTable = parentTable.parent;
-                    }
-                    parentTable.rows.itemByRange (0, fatCell.rows.item (-1).index).rowType = RowTypes.HEADER_ROW;
-                }
-                catch (e) {
-
-                }
-            }
-        }
-        else if (newStyleName == "Footer" && dynamicStyleMethod.search (/Row/i) != -1) {
-            if (startInsertionPoint.parent.constructor.name == "Cell") {
-                var fatCell = startInsertionPoint.parent.rows.item (-1).cells.item (0);
-                for (var cfr = 1; cfr < fatCell.rows.item (-1).cells.length; cfr++) {
-                    if (fatCell.rows.item (-1).cells.item (cfr).rows.length > fatCell.rows.length) {
-                        fatCell = fatCell.rows.item (-1).cells.item (cfr);
-                    }
-                }
-                try {
-                    var parentTable = fatCell;
-                    while (parentTable != null && parentTable.constructor.name != "Table") {
-                        parentTable = parentTable.parent;
-                    }
-                    parentTable.rows.itemByRange (fatCell.rows.item (0).index, fatCell.rows.item (-1).index).rowType = RowTypes.FOOTER_ROW;
-                }
-                catch (e) {
-                    
-                }
-            }
-        }
-        else if (dynamicStyleMethod.search (/Cell/i) != -1 || dynamicStyleMethod.search (/Row/i) != -1 || dynamicStyleMethod.search (/Column/i) != -1) {
-            var newStyle = targetDocument.cellStyles.itemByName (newStyleName);
-            var styleNameSuffix = dynamicStyleSeparator + "Body";
-            var isTableDefaultStyle = false;
-            if (newStyle == null) { // Create new style
-                newStyle = targetDocument.cellStyles.add({name: newStyleName});
-                if (newBasedOnStyleName != "") {
-                    var newBasedOnStyle = targetDocument.cellStyles.itemByName (newBasedOnStyleName);
-                    if (newBasedOnStyle == null) {
-                        newBasedOnStyle = targetDocument.cellStyles.add({name: newBasedOnStyleName});
-                    }
-                    if (newStyle.name != newBasedOnStyle.name) {
-                        newStyle.basedOn = newBasedOnStyle;
-                    }
-                }
-                var expectedParaStyle = targetDocument.paragraphStyles.itemByName (newStyleName);
-                if (expectedParaStyle != null) {
-                    expectedCellStyle.appliedParagraphStyle = expectedParaStyle;
-                }
-                if (newStyleName.indexOf (styleNameSuffix) > 0 && newStyleName.indexOf (styleNameSuffix) == (newStyleName.length - styleNameSuffix.length)) {
-                    var expectedTableStyle = targetDocument.tableStyles.itemByName (newStyleName.slice (0, newStyleName.indexOf (styleNameSuffix)));
-                    if (expectedTableStyle != null) {
-                        expectedTableStyle.bodyRegionCellStyle = newStyle;
-                        isTableDefaultStyle = true;
-                    } 
-                }
-                styleNameSuffix = dynamicStyleSeparator + "Header";
-                if (newStyleName.indexOf (styleNameSuffix) > 0 && newStyleName.indexOf (styleNameSuffix) == (newStyleName.length - styleNameSuffix.length)) {
-                    var expectedTableStyle = targetDocument.tableStyles.itemByName (newStyleName.slice (0, newStyleName.indexOf (styleNameSuffix)));
-                    if (expectedTableStyle != null) {
-                        expectedTableStyle.headerRegionCellStyle = newStyle;
-                        isTableDefaultStyle = true;
-                    } 
-                }
-                styleNameSuffix = dynamicStyleSeparator + "Footer";
-                if (newStyleName.indexOf (styleNameSuffix) > 0 && newStyleName.indexOf (styleNameSuffix) == (newStyleName.length - styleNameSuffix.length)) {
-                    var expectedTableStyle = targetDocument.tableStyles.itemByName (newStyleName.slice (0, newStyleName.indexOf (styleNameSuffix)));
-                    if (expectedTableStyle != null) {
-                        expectedTableStyle.footerRegionCellStyle = newStyle;
-                        isTableDefaultStyle = true;
-                    } 
-                }
-                styleNameSuffix = dynamicStyleSeparator + "Left";
-                if (newStyleName.indexOf (styleNameSuffix) > 0 && newStyleName.indexOf (styleNameSuffix) == (newStyleName.length - styleNameSuffix.length)) {
-                    var expectedTableStyle = targetDocument.tableStyles.itemByName (newStyleName.slice (0, newStyleName.indexOf (styleNameSuffix)));
-                    if (expectedTableStyle != null) {
-                        expectedTableStyle.leftColumnRegionCellStyle = newStyle;
-                        isTableDefaultStyle = true;
-                    } 
-                }
-                styleNameSuffix = dynamicStyleSeparator + "Right";
-                if (newStyleName.indexOf (styleNameSuffix) > 0 && newStyleName.indexOf (styleNameSuffix) == (newStyleName.length - styleNameSuffix.length)) {
-                    var expectedTableStyle = targetDocument.tableStyles.itemByName (newStyleName.slice (0, newStyleName.indexOf (styleNameSuffix)));
-                    if (expectedTableStyle != null) {
-                        expectedTableStyle.rightColumnRegionCellStyle = newStyle;
-                        isTableDefaultStyle = true;
-                    } 
-                }
-            }
-            if (startInsertionPoint.parent.constructor.name == "Cell") {
-                styleNameSuffix = dynamicStyleSeparator + "Header";
-                if (newStyleName.indexOf (styleNameSuffix) > 0 && newStyleName.indexOf (styleNameSuffix) == (newStyleName.length - styleNameSuffix.length)) {
-                    for (var thr = 0; thr <= startInsertionPoint.parent.parentRow.index; thr++) {
-                        if (startInsertionPoint.parent.parentRow.parent.rows.item(thr).rowType != RowTypes.HEADER_ROW) {
-                            if (thr == startInsertionPoint.parent.parentRow.parent.rows.length - 1) {
-                                startInsertionPoint.parent.parentRow.parent.rows.add (LocationOptions.AT_END);
-                            }
-                            startInsertionPoint.parent.parentRow.parent.rows.item(thr).rowType = RowTypes.HEADER_ROW;
-                        }
-                    }
-                }
-                styleNameSuffix = dynamicStyleSeparator + "Footer";
-                if (newStyleName.indexOf (styleNameSuffix) > 0 && newStyleName.indexOf (styleNameSuffix) == (newStyleName.length - styleNameSuffix.length)) {
-                    for (var tfr = startInsertionPoint.parent.parentRow.parent.rows.length - 1; tfr >= startInsertionPoint.parent.parentRow.index; tfr--) {
-                        if (startInsertionPoint.parent.parentRow.parent.rows.item(tfr).rowType != RowTypes.FOOTER_ROW) {
-                            startInsertionPoint.parent.parentRow.parent.rows.item(tfr).rowType = RowTypes.FOOTER_ROW;
-                        }
-                    }
-                }
-            }
-            if (dynamicStyleMethod.search (/Cell/i) != -1) {
-                if (startInsertionPoint.parent.constructor.name == "Cell") {
-                    if (isRIE && textRange != false) {
-                        if (textRange == null || textRange.contents == "") {
-                            dynamicStyleMethod = dynamicStyleMethod.replace ("Cell", "Merge");
-                        }
-                    }
-                    if (newStyle != null && !isTableDefaultStyle) {
-                        startInsertionPoint.parent.appliedCellStyle = newStyle;
-                    }
-                }
-            }
-            else if (dynamicStyleMethod.search (/Row/i) != -1) {
-                if (startInsertionPoint.parent.constructor.name == "Cell") {
-                    if (isRIE && textRange != false) {
-                        if (textRange == null || textRange.contents == "") {
-                            if (removeStyle != "") {
-                                newStyle = targetDocument.cellStyles.itemByName (removeStyle);
-                            }
-                            else {
-                                startInsertionPoint.parent.parentRow.remove ();
-                                return false;
-                            }
-                        }
-                    }
-                    if (newStyle != null && !isTableDefaultStyle) {
-                        var theRow = startInsertionPoint.parent.parentRow;
-                        theRow.cells.everyItem ().appliedCellStyle = newStyle;
-                    }
-                }
-            }
-            else if (dynamicStyleMethod.search (/Column/i) != -1) {
-                if (startInsertionPoint.parent.constructor.name == "Cell") {
-                    if (isRIE && textRange != false) {
-                        if (textRange == null || textRange.contents == "") {
-                            if (removeStyle != "") {
-                                newStyle = targetDocument.cellStyles.itemByName (removeStyle);
-                            }
-                            else {
-                                startInsertionPoint.parent.parentColumn.remove ();
-                                return false;
-                            }
-                        }
-                    }
-                    if (newStyle != null && !isTableDefaultStyle) {
-                        var theColumn = startInsertionPoint.parent.parentColumn;
-                        theColumn.cells.everyItem ().appliedCellStyle = newStyle;
-                    }
-                }
-            }
-        }
-        if (dynamicStyleMethod.search (/Font/i) != -1) {
-            if (textRange != false && textRange != null) {
-                if (textRange.contents != "") {
-                    var theFont = newStyleName;
-                    var theFontStyle = "";
-                    if (newStyleName.indexOf (", ") != -1) {
-                        var newStyleNameSplitted = newStyleName.split (", ");
-                        theFont = newStyleNameSplitted[0];
-                        theFontStyle = newStyleNameSplitted[1];
-                    }
-                    else if (newStyleName.indexOf (" | ") != -1) {
-                        var newStyleNameSplitted = newStyleName.split (" | ");
-                        theFont = newStyleNameSplitted[0];
-                        theFontStyle = newStyleNameSplitted[1];
-                    }
-                    try {
-                        textRange.appliedFont = theFont;
-                    }
-                    catch (err) {
-
-                    }
-                    if (theFontStyle != "") {
-                        try {
-                            textRange.fontStyle = theFontStyle;
-                        }
-                        catch (err) {
-    
-                        }
-                    }
-                }
-            }  
-        }
-        if (dynamicStyleMethod.search (/Style/i) != -1) {
-            if (textRange != false && textRange != null) {
-                if (textRange.contents != "") {
-                    try {
-                        textRange.fontStyle = newStyleName;
-                    }
-                    catch (err) {
-
-                    }
-                }
-            }  
-        }
-        if (dynamicStyleMethod.search (/Size/i) != -1) {
-            if (textRange != false && textRange != null) {
-                if (textRange.contents != "") {
-                    var isPercent = false;
-                    if (newStyleName.indexOf ("%") != -1) {
-                        newStyleName = newStyleName.replace ("%", "");
-                        newStyleName = parseFloat (newStyleName);
-                        isPercent = true;
-                    }
-                    if (isPercent) {
-                        try {
-                            textRange.pointSize *= newStyleName / 100;
-                        }
-                        catch (err) {
-    
-                        }
-                    }
-                    else {
-                        try {
-                            textRange.pointSize = newStyleName;
-                        }
-                        catch (err) {
-    
-                        }
-                    }
-                }
-            }  
-        }
-        if (dynamicStyleMethod.search (/Color/i) != -1) {
-            if (textRange != false && textRange != null) {
-                if (textRange.contents != "") {
-                    try {
-                        textRange.fillColor = newStyleName;
-                    }
-                    catch (err) {
-
-                    }
-                }
-            }  
-        }
-        if (dynamicStyleMethod.search (/Justification/i) != -1) {
-            if (textRange != false && textRange != null) {
-                if (textRange.contents != "") {
-                    newStyleName = newStyleName.toUpperCase();
-                    switch(newStyleName) {
-                        case "LEFT_ALIGN":
-                            textRange.justification = Justification.LEFT_ALIGN;
-                            break;
-                        case "CENTER_ALIGN":
-                            textRange.justification = Justification.CENTER_ALIGN;
-                            break;
-                        case "RIGHT_ALIGN":
-                            textRange.justification = Justification.RIGHT_ALIGN;
-                            break;
-                        case "LEFT_JUSTIFIED":
-                            textRange.justification = Justification.LEFT_JUSTIFIED;
-                            break;
-                        case "RIGHT_JUSTIFIED":
-                            textRange.justification = Justification.RIGHT_JUSTIFIED;
-                            break;
-                        case "CENTER_JUSTIFIED":
-                            textRange.justification = Justification.CENTER_JUSTIFIED;
-                            break;
-                        case "FULLY_JUSTIFIED":
-                            textRange.justification = Justification.FULLY_JUSTIFIED;
-                            break;
-                        case "TO_BINDING_SIDE":
-                            textRange.justification = Justification.TO_BINDING_SIDE;
-                            break;
-                        case "AWAY_FROM_BINDING_SIDE":
-                            textRange.justification = Justification.AWAY_FROM_BINDING_SIDE;
-                            break;
-                    }
-                }
-            }  
-        }
-        if (dynamicStyleMethod.search (/characterDirection/i) != -1) {
-            if (textRange != false && textRange != null) {
-                if (textRange.contents != "") {
-                    newStyleName = newStyleName.toUpperCase();
-                    switch(newStyleName) {
-                        case "DEFAULT_DIRECTION":
-                            textRange.characterDirection = CharacterDirectionOptions.DEFAULT_DIRECTION;
-                            break;
-                        case "LEFT_TO_RIGHT_DIRECTION":
-                            textRange.characterDirection = CharacterDirectionOptions.LEFT_TO_RIGHT_DIRECTION;
-                            break;
-                        case "RIGHT_TO_LEFT_DIRECTION":
-                            textRange.characterDirection = CharacterDirectionOptions.RIGHT_TO_LEFT_DIRECTION;
-                            break;
-                    }
-                }
-            }  
-        }
-        if (dynamicStyleMethod.search (/paragraphDirection/i) != -1) {
-            if (textRange != false && textRange != null) {
-                if (textRange.contents != "") {
-                    newStyleName = newStyleName.toUpperCase();
-                    switch(newStyleName) {
-                        case "LEFT_TO_RIGHT_DIRECTION":
-                            textRange.paragraphDirection = ParagraphDirectionOptions.LEFT_TO_RIGHT_DIRECTION;
-                            break;
-                        case "RIGHT_TO_LEFT_DIRECTION":
-                            textRange.paragraphDirection = ParagraphDirectionOptions.RIGHT_TO_LEFT_DIRECTION;
-                            break;
-                    }
-                }
-            }  
         }
         if (dynamicStyleMethod.search (/Height|Width|Area|Short|Long/i) != -1) {
-            if (cellsDeep[deepIndex] != null) {
+            if (cellsDeep[deepIndex] != null && dynamicStyleMethod.search (/Obj/i) == -1) {
                 /*[0, isHorizontal, cellsDirection, cellsList, cellsFixedList, cellsIndex, cellsChildList]*/
                 if (dynamicStyleMethod.search (/Short|Long/i) != -1) {
                     if (cellsDeep[deepIndex][1]) {
@@ -12196,7 +11354,7 @@ function applyDynamicStyle (dynamicStylePhrase, targetDocument, snippetFile, sta
                 }
             }
             else if (textRange != false) {
-                if (textRange != null && textRange.tables.length > 0 && dynamicStyleMethod.search (/Width/i) != -1) {
+                if (textRange != null && textRange.tables.length > 0 && dynamicStyleMethod.search (/Width/i) != -1 && dynamicStyleMethod.search (/Obj/i) == -1) {
                     var isVirtualPercent = false;
                     if (newStyleName.toLowerCase () == "fit") {
                         newStyleName = '100%|Fit';
@@ -12610,6 +11768,13 @@ function applyDynamicStyle (dynamicStylePhrase, targetDocument, snippetFile, sta
                         }
                         if (isPercent) {
                             var parentValue = null;
+                            var objectInsertionPoint = textItemsPairs[tris][0].parent;
+                            if (objectInsertionPoint instanceof Array) {
+                                objectInsertionPoint = objectInsertionPoint[0];
+                            }
+                            if (objectInsertionPoint.constructor.name == "Character") {
+                                objectInsertionPoint = objectInsertionPoint.parent.insertionPoints.item (objectInsertionPoint.index);
+                            }
                             if (asIndex != -1) {
                                 var actualIndex = asIndex;
                                 if (asIndexPositive != null) {
@@ -12640,22 +11805,22 @@ function applyDynamicStyle (dynamicStylePhrase, targetDocument, snippetFile, sta
                                     parentValue = asBounds[3] - asBounds[1];
                                 }
                             }
-                            else if (startInsertionPoint.parent.constructor.name == "Cell") {
+                            else if (objectInsertionPoint.parent.constructor.name == "Cell") {
                                 if (isForHeight) {
-                                    parentValue = parseFloat (startInsertionPoint.parent.height) - startInsertionPoint.parent.textTopInset - startInsertionPoint.parent.textBottomInset;
+                                    parentValue = parseFloat (objectInsertionPoint.parent.height) - objectInsertionPoint.parent.textTopInset - objectInsertionPoint.parent.textBottomInset;
                                 }
                                 else {
-                                    parentValue = parseFloat (startInsertionPoint.parent.width) - startInsertionPoint.parent.textLeftInset - startInsertionPoint.parent.textRightInset; 
+                                    parentValue = parseFloat (objectInsertionPoint.parent.width) - objectInsertionPoint.parent.textLeftInset - objectInsertionPoint.parent.textRightInset; 
                                 }
                             }
-                            else if (startInsertionPoint.parentTextFrames.length) {
+                            else if (objectInsertionPoint.parentTextFrames.length) {
                                 if (isForHeight) {
-                                    var theFrameBounds = startInsertionPoint.parentTextFrames[0].geometricBounds.join (",");
+                                    var theFrameBounds = objectInsertionPoint.parentTextFrames[0].geometricBounds.join (",");
                                     theFrameBounds = theFrameBounds.split (",");
                                     parentValue = parseFloat (theFrameBounds[2]) - parseFloat (theFrameBounds[0]);
                                 }
                                 else {
-                                    parentValue = startInsertionPoint.parentTextFrames[0].textFramePreferences.textColumnFixedWidth;
+                                    parentValue = objectInsertionPoint.parentTextFrames[0].textFramePreferences.textColumnFixedWidth;
                                 }
                             }
                             if (parentValue) {
@@ -12965,6 +12130,891 @@ function applyDynamicStyle (dynamicStylePhrase, targetDocument, snippetFile, sta
                     }
                 }
             }
+        }
+        else {
+            if (dynamicStyleMethod.search (/Para/i) != -1) {
+                var targetText = startInsertionPoint;
+                if (textRange != false) {
+                    if (isRIE) {
+                        if (textRange == null || textRange.contents == "") {
+                            if (removeStyle != "") {
+                                newStyleName = removeStyle;
+                            }
+                            else {
+                                var thisPara = startInsertionPoint.paragraphs.item (0);
+                                var previousPara = null;
+                                if (thisPara.characters.item (-1).contents != "\r") {
+                                    previousPara = thisPara.parent.paragraphs.previousItem(thisPara);
+                                }
+                                if (previousPara != null) {
+                                    thisPara.parent.characters.itemByRange (previousPara.characters.item (-1), thisPara.characters.item (-1)).remove ();
+                                }
+                                else {
+                                    thisPara.remove ();
+                                }
+                                return false;
+                            }
+                        }
+                    }
+                    if (textRange != null) {
+                        targetText = textRange;
+                    }
+                }
+                if (newStyleName) {
+                    var newStyle = null;
+                    if (dynamicStyleMethod.search (/Code/i) != -1 || newStyleName.search (/\/\/Code/i) == 0 || newStyleName.search (/\/\*code\*\//i) == 0) {
+                        newStyle = newStyleName;
+                    }
+                    else if (newStyleName) {
+                        newStyle = targetDocument.paragraphStyles.itemByName (newStyleName);
+                        if (newStyle == null) { // Create new style
+                            newStyle = targetDocument.paragraphStyles.add({name: newStyleName});
+                            if (newBasedOnStyleName != "") {
+                                var newBasedOnStyle = targetDocument.paragraphStyles.itemByName (newBasedOnStyleName);
+                                if (newBasedOnStyle == null) {
+                                    newBasedOnStyle = targetDocument.paragraphStyles.add({name: newBasedOnStyleName});
+                                }
+                                if (newStyle.name != newBasedOnStyle.name) {
+                                    newStyle.basedOn = newBasedOnStyle;
+                                }
+                            }
+                            var expectedCellStyle = targetDocument.cellStyles.itemByName (newStyleName);
+                            if (expectedCellStyle != null) {
+                                expectedCellStyle.appliedParagraphStyle = newStyle;
+                            }
+                            var expectedObjectStyle = targetDocument.objectStyles.itemByName (newStyleName);
+                            if (expectedObjectStyle != null) {
+                                expectedObjectStyle.appliedParagraphStyle = newStyle;
+                            }
+                        }    
+                    }
+                    if (newStyle != null) {
+                        var targetIndex = 0;
+                        var isPositive = true;
+                        var isFromLast = false;
+                        var isEvenOnly = null;
+                        var appliedCounter = 0;
+                        if (dynamicStyleMethod.search (/For[+-]?\d+[A-Z]?/i) != -1) {
+                            var theNum = dynamicStyleMethod.match (/For[+-]?\d+[A-Z]?/i);
+                            if (theNum != null && theNum.length > 0) {
+                                theNum = theNum[0].slice (3);
+                                if (theNum[0] == '+' || theNum[0] == '-') {
+                                    if (theNum[0] == '+') {
+                                        isPositive = true;
+                                    }
+                                    else {
+                                        isPositive = false;
+                                    }
+                                    theNum = theNum.slice (1);
+                                }
+                                else {
+                                    isPositive = null;
+                                }
+                                targetIndex = parseInt (theNum, 10) - 1;
+                                if (theNum.search (/L/i) != -1) {
+                                    isFromLast = true;
+                                }
+                                if (theNum.search (/E/i) != -1) {
+                                    isEvenOnly = true;
+                                }
+                                else if (theNum.search (/O/i) != -1) {
+                                    isEvenOnly = false;
+                                }
+                            }
+                        }
+                        if (isFromLast) {
+                            targetIndex = targetText.paragraphs.length - targetIndex - 1;
+                        }
+                        var parasArr = [];
+                        for (var trs = 0; trs < targetText.paragraphs.length; trs++) {
+                            if (targetIndex != null) {
+                                if (isPositive == true && trs < targetIndex) {
+                                    continue;
+                                }
+                                else if (isPositive == false && trs > targetIndex) {
+                                    continue;
+                                }
+                                else if (isPositive == null && trs != targetIndex) {
+                                    continue;
+                                }
+                            }
+                            appliedCounter++;
+                            if (isEvenOnly == true && (appliedCounter % 2 == 1)) {
+                                continue;
+                            }
+                            if (isEvenOnly == false && (appliedCounter % 2 == 0)) {
+                                continue;
+                            }
+                            if (targetText.paragraphs[trs].appliedParagraphStyle) {
+                                if (targetText.paragraphs[trs].appliedParagraphStyle.constructor.name === "Array") {
+                                    if (targetText.paragraphs[trs].appliedParagraphStyle.length > 0) {
+                                        if (targetText.paragraphs[trs].appliedParagraphStyle[0].name) {
+                                            if (targetText.paragraphs[trs].appliedParagraphStyle[0].name.search(/\^$/) != -1) {
+                                                var isToContinue = true;
+                                                if (newStyleName.search(/\^$/) != -1) {
+                                                    var toBeAppliedCount = newStyleName.match (/\^+$/)[0].length;
+                                                    var destinationCount = targetText.paragraphs[trs].appliedParagraphStyle[0].name.match (/\^+$/)[0].length;
+                                                    if (toBeAppliedCount > destinationCount) {
+                                                        isToContinue = false;
+                                                    }
+                                                }
+                                                if (isToContinue) {
+                                                    continue;
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else if (targetText.paragraphs[trs].appliedParagraphStyle.name) {
+                                    if (targetText.paragraphs[trs].appliedParagraphStyle.name.search(/\^$/) != -1) {
+                                        var isToContinue = true;
+                                        if (newStyleName.search(/\^$/) != -1) {
+                                            var toBeAppliedCount = newStyleName.match (/\^+$/)[0].length;
+                                            var destinationCount = targetText.paragraphs[trs].appliedParagraphStyle.name.match (/\^+$/)[0].length;
+                                            if (toBeAppliedCount > destinationCount) {
+                                                isToContinue = false;
+                                            }
+                                        }
+                                        if (isToContinue) {
+                                            continue;
+                                        }
+                                    }
+                                }
+                            }
+                            if (dynamicStyleMethod.search (/Code/i) != -1 || newStyleName.search (/\/\/Code/i) == 0 || newStyleName.search (/\/\*code\*\//i) == 0) {
+                                parasArr.push (targetText.paragraphs[trs]);
+                            }
+                            else {
+                                targetText.paragraphs[trs].appliedParagraphStyle = newStyle;
+                            }
+                        }
+                        if (parasArr.length > 0) {
+                            var wrappedCode =
+                                "var paras = context[0];\n" +
+                                "var doc = context[1];\n" +
+                                "var file = context[2];\n" +
+                                "var level = context[3];\n" +
+                                "var frame = null;\n" +
+                                newStyleName;
+                            var customFun = new Function("context", wrappedCode);
+                            var codeFile = null;
+                            if (dynamicStyleFiles instanceof Array) {
+                                if (dynamicStyleFiles.length > 0) {
+                                    codeFile = dynamicStyleFiles[0];
+                                }
+                            }
+                            var fileLevel = 0;
+                            if (liveSnippetID.lastIndexOf ("/") > 0) {
+                                fileLevel = liveSnippetID.split ("/").length - 1;
+                            }
+                            app.doScript (customFun, ScriptLanguage.JAVASCRIPT, [parasArr, targetDocument, codeFile, fileLevel], UndoModes.ENTIRE_SCRIPT, "User Code");
+    
+                        }
+                    }
+                }
+            }
+            if (dynamicStyleMethod.search (/Char/i) != -1) {
+                var targetText = startInsertionPoint;
+                if (textRange != false && textRange != null) {
+                    targetText = textRange;
+                }
+                var newStyle = targetDocument.characterStyles.itemByName (newStyleName);
+                if (newStyle == null) { // Create new style
+                    newStyle = targetDocument.characterStyles.add({name: newStyleName});
+                    if (newBasedOnStyleName != "") {
+                        var newBasedOnStyle = targetDocument.characterStyles.itemByName (newBasedOnStyleName);
+                        if (newBasedOnStyle == null) {
+                            newBasedOnStyle = targetDocument.characterStyles.add({name: newBasedOnStyleName});
+                        }
+                        if (newStyle.name != newBasedOnStyle.name) {
+                            newStyle.basedOn = newBasedOnStyle;
+                        }
+                    }
+                }
+                if (newStyle != null) {
+                    targetText.appliedCharacterStyle = newStyle;
+                }
+            }
+            if (dynamicStyleMethod.search (/Obj/i) != -1) {
+                if (isRIE && textRange != false) {
+                    if (textRange == null || textRange.contents == "") {
+                        if (removeStyle != "") {
+                            newStyleName = removeStyle;
+                        }
+                        else {
+                            if (dynamicStyleMethod.search (/Location/i) != -1) {
+                                var parentFrame = startInsertionPoint.parentTextFrames[0];
+                                var theParent = parentFrame.parent;
+                                do {
+                                    if (theParent.constructor.name == "Character") {
+                                        if (theParent.paragraphs.length > 0) {
+                                            var toRemovePara = theParent.paragraphs.item(0);
+                                            var previousPara = null;
+                                            if (toRemovePara.characters.item (-1).contents != "\r") {
+                                                previousPara = toRemovePara.parent.paragraphs.previousItem(toRemovePara);
+                                            }
+                                            toRemovePara.remove ();
+                                            if (previousPara != null) {
+                                                previousPara.characters.item (-1).remove ();
+                                            }
+                                            return false;
+                                        }
+                                    }
+                                    theParent = theParent.parent;
+                                } while (theParent.constructor.name != "Spread" && theParent.constructor.name != "MasterSpread" && theParent.constructor.name != "Page" && theParent.constructor.name != "Document");
+                            }
+                            parentFrame.remove ();
+                            return false;
+                        }
+                    }
+                }
+                var newStyle = null;
+                if (dynamicStyleMethod.search (/Code/i) != -1 || newStyleName.search (/\/\/Code/i) == 0 || newStyleName.search (/\/\*code\*\//i) == 0) {
+                    newStyle = newStyleName;
+                }
+                else if (newStyleName) {
+                    newStyle = targetDocument.objectStyles.itemByName (newStyleName);
+                    if (newStyle == null) { // Create new style
+                        newStyle = targetDocument.objectStyles.add({name: newStyleName});
+                        if (newBasedOnStyleName != "") {
+                            var newBasedOnStyle = targetDocument.objectStyles.itemByName (newBasedOnStyleName);
+                            if (newBasedOnStyle == null) {
+                                newBasedOnStyle = targetDocument.objectStyles.add({name: newBasedOnStyleName});
+                            }
+                            if (newStyle.name != newBasedOnStyle.name) {
+                                newStyle.basedOn = newBasedOnStyle;
+                            }
+                        }
+                        var expectedParagraphStyle = targetDocument.paragraphStyles.itemByName (newStyleName);
+                        if (expectedParagraphStyle != null) {
+                            newStyle.appliedParagraphStyle = expectedParagraphStyle;
+                        }
+                    }
+                }
+                if (textRange != false) {
+                    if (newStyle != null && textRange != null) {
+                        var targetIndex = null;
+                        var isPositive = null;
+                        var isFromLast = false;
+                        var isEvenOnly = null;
+                        var appliedCounter = 0;
+                        var isOnlyFrames = null;
+                        if (dynamicStyleMethod.search (/For[+-]?\d+[A-Z]?/i) != -1) {
+                            var theNum = dynamicStyleMethod.match (/For[+-]?\d+[A-Z]?/i);
+                            if (theNum != null && theNum.length > 0) {
+                                theNum = theNum[0].slice (3);
+                                if (theNum[0] == '+' || theNum[0] == '-') {
+                                    if (theNum[0] == '+') {
+                                        isPositive = true;
+                                    }
+                                    else {
+                                        isPositive = false;
+                                    }
+                                    theNum = theNum.slice (1);
+                                }
+                                targetIndex = parseInt (theNum, 10) - 1;
+                                if (theNum.search (/L/i) != -1) {
+                                    isFromLast = true;
+                                }
+                                if (theNum.search (/T/i) != -1) {
+                                    isOnlyFrames = true;
+                                }
+                                else if (theNum.search (/P/i) != -1) {
+                                    isOnlyFrames = false;
+                                }
+                                if (theNum.search (/E/i) != -1) {
+                                    isEvenOnly = true;
+                                }
+                                else if (theNum.search (/O/i) != -1) {
+                                    isEvenOnly = false;
+                                }
+                            }
+                        }
+                        var textItemsPairs = sortTextItems (textRange, pageItemsIDs, isOnlyFrames);
+                        if (isFromLast) {
+                            targetIndex = textItemsPairs.length - targetIndex - 1;
+                        }
+                        for (var tris = 0; tris < textItemsPairs.length; tris++) {
+                            if (targetIndex != null) {
+                                if (isPositive == true && tris < targetIndex) {
+                                    continue;
+                                }
+                                else if (isPositive == false && tris > targetIndex) {
+                                    continue;
+                                }
+                                else if (isPositive == null && tris != targetIndex) {
+                                    continue;
+                                }
+                            }
+                            appliedCounter++;
+                            if (isEvenOnly == true && (appliedCounter % 2 == 1)) {
+                                continue;
+                            }
+                            else if (isEvenOnly == false && (appliedCounter % 2 == 0)) {
+                                continue;
+                            }
+                            if (dynamicStyleMethod.search (/Code/i) != -1 || newStyleName.search (/\/\/Code/i) == 0 || newStyleName.search (/\/\*code\*\//i) == 0) {
+                                var wrappedCode =
+                                    "var frame = context[0];\n" +
+                                    "var doc = context[1];\n" +
+                                    "var file = context[2];\n" +
+                                    "var level = context[3];\n" +
+                                    "var paras = null;\n" +
+                                    newStyleName;
+                                var customFun = new Function("context", wrappedCode);
+                                var codeFile = null;
+                                if (dynamicStyleFiles instanceof Array) {
+                                    if (dynamicStyleFiles.length > 0) {
+                                        codeFile = dynamicStyleFiles[0];
+                                    }
+                                }
+                                var fileLevel = 0;
+                                if (liveSnippetID.lastIndexOf ("/") > 0) {
+                                    fileLevel = liveSnippetID.split ("/").length - 1;
+                                }
+                                app.doScript (customFun, ScriptLanguage.JAVASCRIPT, [textItemsPairs[tris][0], targetDocument, codeFile, fileLevel], UndoModes.ENTIRE_SCRIPT, "User Code");
+                            }
+                            else {
+                                textItemsPairs[tris][0].appliedObjectStyle = newStyle;
+                            }
+                        }
+                    }
+                }
+                else if (newStyle != null) {
+                    var parentFrame = null;
+                    if (startInsertionPoint.parentTextFrames && startInsertionPoint.parentTextFrames.length > 0) {
+                        parentFrame = startInsertionPoint.parentTextFrames[0];
+                    }
+                    if (parentFrame != null) {
+                        if (dynamicStyleMethod.search (/Code/i) != -1) {
+                            var wrappedCode =
+                                "var frame = context[0];\n" +
+                                "var doc = context[1];\n" +
+                                "var file = context[2];\n" +
+                                "var level = context[3];\n" +
+                                "var paras = null;\n" +
+                                newStyle;
+                            var customFun = new Function("context", wrappedCode);
+                            var codeFile = null;
+                            if (dynamicStyleFiles instanceof Array) {
+                                if (dynamicStyleFiles.length > 0) {
+                                    codeFile = dynamicStyleFiles[0];
+                                }
+                            }
+                            var fileLevel = 0;
+                            if (liveSnippetID.lastIndexOf ("/") > 0) {
+                                fileLevel = liveSnippetID.split ("/").length - 1;
+                            }
+                            app.doScript (customFun, ScriptLanguage.JAVASCRIPT, [parentFrame, targetDocument, codeFile, fileLevel], UndoModes.ENTIRE_SCRIPT, "User Code");
+                        }
+                        else {
+                            parentFrame.appliedObjectStyle = newStyle;
+                        }
+                    }
+                }
+            }
+            if (dynamicStyleMethod.search (/Table/i) != -1) {
+                if (textRange != false && isRIE) {
+                    if (textRange == null || textRange.contents == "") {
+                        if (removeStyle != "") {
+                            newStyleName = removeStyle;
+                        }
+                        else {
+                            startInsertionPoint.parent.parentRow.parent.remove ();
+                            return false;
+                        }
+                    }
+                }
+                if (newStyleName) {
+                    var newStyle = targetDocument.tableStyles.itemByName (newStyleName);
+                    if (newStyle == null) { // Create new style
+                        newStyle = targetDocument.tableStyles.add({name: newStyleName});
+                        if (newBasedOnStyleName != "") {
+                            var newBasedOnStyle = targetDocument.tableStyles.itemByName (newBasedOnStyleName);
+                            if (newBasedOnStyle == null) {
+                                newBasedOnStyle = targetDocument.tableStyles.add({name: newBasedOnStyleName});
+                            }
+                            if (newStyle.name != newBasedOnStyle.name) {
+                                newStyle.basedOn = newBasedOnStyle;
+                            }
+                        }
+                        var bodyCellStyleName = newStyleName + dynamicStyleSeparator + "Body";
+                        var expectedBodyCellStyle = targetDocument.cellStyles.itemByName (bodyCellStyleName);
+                        if (expectedBodyCellStyle == null) { // Create new style
+                            expectedBodyCellStyle = targetDocument.cellStyles.add({name: bodyCellStyleName});
+                            if (newBasedOnStyleName != "") {
+                                var newBasedOnStyle = targetDocument.cellStyles.itemByName (newBasedOnStyleName + dynamicStyleSeparator + "Body");
+                                if (newBasedOnStyle != null) {
+                                    expectedBodyCellStyle.basedOn = newBasedOnStyle;
+                                }
+                            }
+                            var expectedParaStyle = targetDocument.paragraphStyles.itemByName (bodyCellStyleName);
+                            if (expectedParaStyle == null) {
+                                expectedParaStyle = targetDocument.paragraphStyles.add({name: bodyCellStyleName});
+                                if (newBasedOnStyleName != "") {
+                                    var newBasedOnStyle = targetDocument.paragraphStyles.itemByName (newBasedOnStyleName + dynamicStyleSeparator + "Body");
+                                    if (newBasedOnStyle != null) {
+                                        expectedParaStyle.basedOn = newBasedOnStyle;
+                                    }
+                                }
+                            }
+                            if (expectedParaStyle != null) {
+                                expectedBodyCellStyle.appliedParagraphStyle = expectedParaStyle;
+                            }
+                        }
+                        if (expectedBodyCellStyle != null) {
+                            newStyle.bodyRegionCellStyle = expectedBodyCellStyle;
+                        }
+                        var headerCellStyleName = newStyleName + dynamicStyleSeparator + "Header";
+                        var expectedHeaderCellStyle = targetDocument.cellStyles.itemByName (headerCellStyleName);
+                        if (expectedHeaderCellStyle == null) { // Create new style
+                            expectedHeaderCellStyle = targetDocument.cellStyles.add({name: headerCellStyleName});
+                            if (newBasedOnStyleName != "") {
+                                var newBasedOnStyle = targetDocument.cellStyles.itemByName (newBasedOnStyleName + dynamicStyleSeparator + "Header");
+                                if (newBasedOnStyle != null) {
+                                    expectedHeaderCellStyle.basedOn = newBasedOnStyle;
+                                }
+                            }
+                            var expectedParaStyle = targetDocument.paragraphStyles.itemByName (headerCellStyleName);
+                            if (expectedParaStyle == null) {
+                                expectedParaStyle = targetDocument.paragraphStyles.add({name: headerCellStyleName});
+                                if (newBasedOnStyleName != "") {
+                                    var newBasedOnStyle = targetDocument.paragraphStyles.itemByName (newBasedOnStyleName + dynamicStyleSeparator + "Header");
+                                    if (newBasedOnStyle != null) {
+                                        expectedParaStyle.basedOn = newBasedOnStyle;
+                                    }
+                                }
+                            }
+                            if (expectedParaStyle != null) {
+                                expectedHeaderCellStyle.appliedParagraphStyle = expectedParaStyle;
+                            }
+                        }
+                        if (expectedHeaderCellStyle != null) {
+                            newStyle.headerRegionCellStyle = expectedHeaderCellStyle;
+                        }
+                        var footerCellStyleName = newStyleName + dynamicStyleSeparator + "Footer";
+                        var expectedFooterCellStyle = targetDocument.cellStyles.itemByName (footerCellStyleName);
+                        if (expectedFooterCellStyle == null) { // Create new style
+                            expectedFooterCellStyle = targetDocument.cellStyles.add({name: footerCellStyleName});
+                            if (newBasedOnStyleName != "") {
+                                var newBasedOnStyle = targetDocument.cellStyles.itemByName (newBasedOnStyleName + dynamicStyleSeparator + "Footer");
+                                if (newBasedOnStyle != null) {
+                                    expectedFooterCellStyle.basedOn = newBasedOnStyle;
+                                }
+                            }
+                            var expectedParaStyle = targetDocument.paragraphStyles.itemByName (footerCellStyleName);
+                            if (expectedParaStyle == null) {
+                                expectedParaStyle = targetDocument.paragraphStyles.add({name: footerCellStyleName});
+                                if (newBasedOnStyleName != "") {
+                                    var newBasedOnStyle = targetDocument.paragraphStyles.itemByName (newBasedOnStyleName + dynamicStyleSeparator + "Footer");
+                                    if (newBasedOnStyle != null) {
+                                        expectedParaStyle.basedOn = newBasedOnStyle;
+                                    }
+                                }
+                            }
+                            if (expectedParaStyle != null) {
+                                expectedFooterCellStyle.appliedParagraphStyle = expectedParaStyle;
+                            }
+                        }
+                        if (expectedFooterCellStyle != null) {
+                            newStyle.footerRegionCellStyle = expectedFooterCellStyle;
+                        }
+                        var leftCellStyleName = newStyleName + dynamicStyleSeparator + "Left";
+                        var expectedLeftCellStyle = targetDocument.cellStyles.itemByName (leftCellStyleName);
+                        if (expectedLeftCellStyle == null) { // Create new style
+                            expectedLeftCellStyle = targetDocument.cellStyles.add({name: leftCellStyleName});
+                            if (newBasedOnStyleName != "") {
+                                var newBasedOnStyle = targetDocument.cellStyles.itemByName (newBasedOnStyleName + dynamicStyleSeparator + "Left");
+                                if (newBasedOnStyle != null) {
+                                    expectedLeftCellStyle.basedOn = newBasedOnStyle;
+                                }
+                            }
+                            var expectedParaStyle = targetDocument.paragraphStyles.itemByName (leftCellStyleName);
+                            if (expectedParaStyle == null) {
+                                expectedParaStyle = targetDocument.paragraphStyles.add({name: leftCellStyleName});
+                                if (newBasedOnStyleName != "") {
+                                    var newBasedOnStyle = targetDocument.paragraphStyles.itemByName (newBasedOnStyleName + dynamicStyleSeparator + "Left");
+                                    if (newBasedOnStyle != null) {
+                                        expectedParaStyle.basedOn = newBasedOnStyle;
+                                    }
+                                }
+                            }
+                            if (expectedParaStyle != null) {
+                                expectedLeftCellStyle.appliedParagraphStyle = expectedParaStyle;
+                            }
+                        }
+                        if (expectedLeftCellStyle != null) {
+                            newStyle.leftColumnRegionCellStyle = expectedLeftCellStyle;
+                        }
+                        var rightCellStyleName = newStyleName + dynamicStyleSeparator + "Right";
+                        var expectedRightCellStyle = targetDocument.cellStyles.itemByName (rightCellStyleName);
+                        if (expectedRightCellStyle == null) { // Create new style
+                            expectedRightCellStyle = targetDocument.cellStyles.add({name: rightCellStyleName});
+                            if (newBasedOnStyleName != "") {
+                                var newBasedOnStyle = targetDocument.cellStyles.itemByName (newBasedOnStyleName + dynamicStyleSeparator + "Right");
+                                if (newBasedOnStyle != null) {
+                                    expectedRightCellStyle.basedOn = newBasedOnStyle;
+                                }
+                            }
+                            var expectedParaStyle = targetDocument.paragraphStyles.itemByName (rightCellStyleName);
+                            if (expectedParaStyle == null) {
+                                expectedParaStyle = targetDocument.paragraphStyles.add({name: rightCellStyleName});
+                                if (newBasedOnStyleName != "") {
+                                    var newBasedOnStyle = targetDocument.paragraphStyles.itemByName (newBasedOnStyleName + dynamicStyleSeparator + "Right");
+                                    if (newBasedOnStyle != null) {
+                                        expectedParaStyle.basedOn = newBasedOnStyle;
+                                    }
+                                }
+                            }
+                            if (expectedParaStyle != null) {
+                                expectedRightCellStyle.appliedParagraphStyle = expectedParaStyle;
+                            }
+                        }
+                        if (expectedRightCellStyle != null) {
+                            newStyle.rightColumnRegionCellStyle = expectedRightCellStyle;
+                        }
+                    }
+                    if (newStyle != null) {
+                        if (textRange != false) {
+                            if (textRange != null) {
+                                for (var trt = 0; trt < textRange.tables.length; trt++) {
+                                    textRange.tables[trt].appliedTableStyle = newStyle;
+                                    textRange.tables[trt].cells.everyItem ().clearCellStyleOverrides (true);
+                                    textRange.tables[trt].cells.everyItem ().paragraphs.everyItem ().clearOverrides (OverrideType.ALL);
+                                }
+                            }
+                        }
+                        else {
+                            startInsertionPoint.parent.parentRow.parent.appliedTableStyle = newStyle;
+                            startInsertionPoint.parent.parentRow.parent.cells.everyItem ().clearCellStyleOverrides (true);
+                            startInsertionPoint.parent.parentRow.parent.cells.everyItem ().paragraphs.everyItem ().clearOverrides (OverrideType.ALL);
+                        }
+                    }
+                }
+            }
+            if (newStyleName == "Header" && dynamicStyleMethod.search (/Row/i) != -1) {
+                if (startInsertionPoint.parent.constructor.name == "Cell") {
+                    var fatCell = startInsertionPoint.parent.rows.item (0).cells.item (0);
+                    for (var cfr = 1; cfr < fatCell.rows.item (0).cells.length; cfr++) {
+                        if (fatCell.rows.item (0).cells.item (cfr).rows.length > fatCell.rows.length) {
+                            fatCell = fatCell.rows.item (0).cells.item (cfr);
+                        }
+                    }
+                    try {
+                        var parentTable = fatCell;
+                        while (parentTable != null && parentTable.constructor.name != "Table") {
+                            parentTable = parentTable.parent;
+                        }
+                        parentTable.rows.itemByRange (0, fatCell.rows.item (-1).index).rowType = RowTypes.HEADER_ROW;
+                    }
+                    catch (e) {
+    
+                    }
+                }
+            }
+            else if (newStyleName == "Footer" && dynamicStyleMethod.search (/Row/i) != -1) {
+                if (startInsertionPoint.parent.constructor.name == "Cell") {
+                    var fatCell = startInsertionPoint.parent.rows.item (-1).cells.item (0);
+                    for (var cfr = 1; cfr < fatCell.rows.item (-1).cells.length; cfr++) {
+                        if (fatCell.rows.item (-1).cells.item (cfr).rows.length > fatCell.rows.length) {
+                            fatCell = fatCell.rows.item (-1).cells.item (cfr);
+                        }
+                    }
+                    try {
+                        var parentTable = fatCell;
+                        while (parentTable != null && parentTable.constructor.name != "Table") {
+                            parentTable = parentTable.parent;
+                        }
+                        parentTable.rows.itemByRange (fatCell.rows.item (0).index, fatCell.rows.item (-1).index).rowType = RowTypes.FOOTER_ROW;
+                    }
+                    catch (e) {
+                        
+                    }
+                }
+            }
+            else if (dynamicStyleMethod.search (/Cell/i) != -1 || dynamicStyleMethod.search (/Row/i) != -1 || dynamicStyleMethod.search (/Column/i) != -1) {
+                var newStyle = targetDocument.cellStyles.itemByName (newStyleName);
+                var styleNameSuffix = dynamicStyleSeparator + "Body";
+                var isTableDefaultStyle = false;
+                if (newStyle == null) { // Create new style
+                    newStyle = targetDocument.cellStyles.add({name: newStyleName});
+                    if (newBasedOnStyleName != "") {
+                        var newBasedOnStyle = targetDocument.cellStyles.itemByName (newBasedOnStyleName);
+                        if (newBasedOnStyle == null) {
+                            newBasedOnStyle = targetDocument.cellStyles.add({name: newBasedOnStyleName});
+                        }
+                        if (newStyle.name != newBasedOnStyle.name) {
+                            newStyle.basedOn = newBasedOnStyle;
+                        }
+                    }
+                    var expectedParaStyle = targetDocument.paragraphStyles.itemByName (newStyleName);
+                    if (expectedParaStyle != null) {
+                        expectedCellStyle.appliedParagraphStyle = expectedParaStyle;
+                    }
+                    if (newStyleName.indexOf (styleNameSuffix) > 0 && newStyleName.indexOf (styleNameSuffix) == (newStyleName.length - styleNameSuffix.length)) {
+                        var expectedTableStyle = targetDocument.tableStyles.itemByName (newStyleName.slice (0, newStyleName.indexOf (styleNameSuffix)));
+                        if (expectedTableStyle != null) {
+                            expectedTableStyle.bodyRegionCellStyle = newStyle;
+                            isTableDefaultStyle = true;
+                        } 
+                    }
+                    styleNameSuffix = dynamicStyleSeparator + "Header";
+                    if (newStyleName.indexOf (styleNameSuffix) > 0 && newStyleName.indexOf (styleNameSuffix) == (newStyleName.length - styleNameSuffix.length)) {
+                        var expectedTableStyle = targetDocument.tableStyles.itemByName (newStyleName.slice (0, newStyleName.indexOf (styleNameSuffix)));
+                        if (expectedTableStyle != null) {
+                            expectedTableStyle.headerRegionCellStyle = newStyle;
+                            isTableDefaultStyle = true;
+                        } 
+                    }
+                    styleNameSuffix = dynamicStyleSeparator + "Footer";
+                    if (newStyleName.indexOf (styleNameSuffix) > 0 && newStyleName.indexOf (styleNameSuffix) == (newStyleName.length - styleNameSuffix.length)) {
+                        var expectedTableStyle = targetDocument.tableStyles.itemByName (newStyleName.slice (0, newStyleName.indexOf (styleNameSuffix)));
+                        if (expectedTableStyle != null) {
+                            expectedTableStyle.footerRegionCellStyle = newStyle;
+                            isTableDefaultStyle = true;
+                        } 
+                    }
+                    styleNameSuffix = dynamicStyleSeparator + "Left";
+                    if (newStyleName.indexOf (styleNameSuffix) > 0 && newStyleName.indexOf (styleNameSuffix) == (newStyleName.length - styleNameSuffix.length)) {
+                        var expectedTableStyle = targetDocument.tableStyles.itemByName (newStyleName.slice (0, newStyleName.indexOf (styleNameSuffix)));
+                        if (expectedTableStyle != null) {
+                            expectedTableStyle.leftColumnRegionCellStyle = newStyle;
+                            isTableDefaultStyle = true;
+                        } 
+                    }
+                    styleNameSuffix = dynamicStyleSeparator + "Right";
+                    if (newStyleName.indexOf (styleNameSuffix) > 0 && newStyleName.indexOf (styleNameSuffix) == (newStyleName.length - styleNameSuffix.length)) {
+                        var expectedTableStyle = targetDocument.tableStyles.itemByName (newStyleName.slice (0, newStyleName.indexOf (styleNameSuffix)));
+                        if (expectedTableStyle != null) {
+                            expectedTableStyle.rightColumnRegionCellStyle = newStyle;
+                            isTableDefaultStyle = true;
+                        } 
+                    }
+                }
+                if (startInsertionPoint.parent.constructor.name == "Cell") {
+                    styleNameSuffix = dynamicStyleSeparator + "Header";
+                    if (newStyleName.indexOf (styleNameSuffix) > 0 && newStyleName.indexOf (styleNameSuffix) == (newStyleName.length - styleNameSuffix.length)) {
+                        for (var thr = 0; thr <= startInsertionPoint.parent.parentRow.index; thr++) {
+                            if (startInsertionPoint.parent.parentRow.parent.rows.item(thr).rowType != RowTypes.HEADER_ROW) {
+                                if (thr == startInsertionPoint.parent.parentRow.parent.rows.length - 1) {
+                                    startInsertionPoint.parent.parentRow.parent.rows.add (LocationOptions.AT_END);
+                                }
+                                startInsertionPoint.parent.parentRow.parent.rows.item(thr).rowType = RowTypes.HEADER_ROW;
+                            }
+                        }
+                    }
+                    styleNameSuffix = dynamicStyleSeparator + "Footer";
+                    if (newStyleName.indexOf (styleNameSuffix) > 0 && newStyleName.indexOf (styleNameSuffix) == (newStyleName.length - styleNameSuffix.length)) {
+                        for (var tfr = startInsertionPoint.parent.parentRow.parent.rows.length - 1; tfr >= startInsertionPoint.parent.parentRow.index; tfr--) {
+                            if (startInsertionPoint.parent.parentRow.parent.rows.item(tfr).rowType != RowTypes.FOOTER_ROW) {
+                                startInsertionPoint.parent.parentRow.parent.rows.item(tfr).rowType = RowTypes.FOOTER_ROW;
+                            }
+                        }
+                    }
+                }
+                if (dynamicStyleMethod.search (/Cell/i) != -1) {
+                    if (startInsertionPoint.parent.constructor.name == "Cell") {
+                        if (isRIE && textRange != false) {
+                            if (textRange == null || textRange.contents == "") {
+                                dynamicStyleMethod = dynamicStyleMethod.replace ("Cell", "Merge");
+                            }
+                        }
+                        if (newStyle != null && !isTableDefaultStyle) {
+                            startInsertionPoint.parent.appliedCellStyle = newStyle;
+                        }
+                    }
+                }
+                else if (dynamicStyleMethod.search (/Row/i) != -1) {
+                    if (startInsertionPoint.parent.constructor.name == "Cell") {
+                        if (isRIE && textRange != false) {
+                            if (textRange == null || textRange.contents == "") {
+                                if (removeStyle != "") {
+                                    newStyle = targetDocument.cellStyles.itemByName (removeStyle);
+                                }
+                                else {
+                                    startInsertionPoint.parent.parentRow.remove ();
+                                    return false;
+                                }
+                            }
+                        }
+                        if (newStyle != null && !isTableDefaultStyle) {
+                            var theRow = startInsertionPoint.parent.parentRow;
+                            theRow.cells.everyItem ().appliedCellStyle = newStyle;
+                        }
+                    }
+                }
+                else if (dynamicStyleMethod.search (/Column/i) != -1) {
+                    if (startInsertionPoint.parent.constructor.name == "Cell") {
+                        if (isRIE && textRange != false) {
+                            if (textRange == null || textRange.contents == "") {
+                                if (removeStyle != "") {
+                                    newStyle = targetDocument.cellStyles.itemByName (removeStyle);
+                                }
+                                else {
+                                    startInsertionPoint.parent.parentColumn.remove ();
+                                    return false;
+                                }
+                            }
+                        }
+                        if (newStyle != null && !isTableDefaultStyle) {
+                            var theColumn = startInsertionPoint.parent.parentColumn;
+                            theColumn.cells.everyItem ().appliedCellStyle = newStyle;
+                        }
+                    }
+                }
+            }
+        }       
+        if (dynamicStyleMethod.search (/Font/i) != -1) {
+            if (textRange != false && textRange != null) {
+                if (textRange.contents != "") {
+                    var theFont = newStyleName;
+                    var theFontStyle = "";
+                    if (newStyleName.indexOf (", ") != -1) {
+                        var newStyleNameSplitted = newStyleName.split (", ");
+                        theFont = newStyleNameSplitted[0];
+                        theFontStyle = newStyleNameSplitted[1];
+                    }
+                    else if (newStyleName.indexOf (" | ") != -1) {
+                        var newStyleNameSplitted = newStyleName.split (" | ");
+                        theFont = newStyleNameSplitted[0];
+                        theFontStyle = newStyleNameSplitted[1];
+                    }
+                    try {
+                        textRange.appliedFont = theFont;
+                    }
+                    catch (err) {
+
+                    }
+                    if (theFontStyle != "") {
+                        try {
+                            textRange.fontStyle = theFontStyle;
+                        }
+                        catch (err) {
+    
+                        }
+                    }
+                }
+            }  
+        }
+        if (dynamicStyleMethod.search (/Style/i) != -1) {
+            if (textRange != false && textRange != null) {
+                if (textRange.contents != "") {
+                    try {
+                        textRange.fontStyle = newStyleName;
+                    }
+                    catch (err) {
+
+                    }
+                }
+            }  
+        }
+        if (dynamicStyleMethod.search (/Size/i) != -1) {
+            if (textRange != false && textRange != null) {
+                if (textRange.contents != "") {
+                    var isPercent = false;
+                    if (newStyleName.indexOf ("%") != -1) {
+                        newStyleName = newStyleName.replace ("%", "");
+                        newStyleName = parseFloat (newStyleName);
+                        isPercent = true;
+                    }
+                    if (isPercent) {
+                        try {
+                            textRange.pointSize *= newStyleName / 100;
+                        }
+                        catch (err) {
+    
+                        }
+                    }
+                    else {
+                        try {
+                            textRange.pointSize = newStyleName;
+                        }
+                        catch (err) {
+    
+                        }
+                    }
+                }
+            }  
+        }
+        if (dynamicStyleMethod.search (/Color/i) != -1) {
+            if (textRange != false && textRange != null) {
+                if (textRange.contents != "") {
+                    try {
+                        textRange.fillColor = newStyleName;
+                    }
+                    catch (err) {
+
+                    }
+                }
+            }  
+        }
+        if (dynamicStyleMethod.search (/Justification/i) != -1) {
+            if (textRange != false && textRange != null) {
+                if (textRange.contents != "") {
+                    newStyleName = newStyleName.toUpperCase();
+                    switch(newStyleName) {
+                        case "LEFT_ALIGN":
+                            textRange.justification = Justification.LEFT_ALIGN;
+                            break;
+                        case "CENTER_ALIGN":
+                            textRange.justification = Justification.CENTER_ALIGN;
+                            break;
+                        case "RIGHT_ALIGN":
+                            textRange.justification = Justification.RIGHT_ALIGN;
+                            break;
+                        case "LEFT_JUSTIFIED":
+                            textRange.justification = Justification.LEFT_JUSTIFIED;
+                            break;
+                        case "RIGHT_JUSTIFIED":
+                            textRange.justification = Justification.RIGHT_JUSTIFIED;
+                            break;
+                        case "CENTER_JUSTIFIED":
+                            textRange.justification = Justification.CENTER_JUSTIFIED;
+                            break;
+                        case "FULLY_JUSTIFIED":
+                            textRange.justification = Justification.FULLY_JUSTIFIED;
+                            break;
+                        case "TO_BINDING_SIDE":
+                            textRange.justification = Justification.TO_BINDING_SIDE;
+                            break;
+                        case "AWAY_FROM_BINDING_SIDE":
+                            textRange.justification = Justification.AWAY_FROM_BINDING_SIDE;
+                            break;
+                    }
+                }
+            }  
+        }
+        if (dynamicStyleMethod.search (/characterDirection/i) != -1) {
+            if (textRange != false && textRange != null) {
+                if (textRange.contents != "") {
+                    newStyleName = newStyleName.toUpperCase();
+                    switch(newStyleName) {
+                        case "DEFAULT_DIRECTION":
+                            textRange.characterDirection = CharacterDirectionOptions.DEFAULT_DIRECTION;
+                            break;
+                        case "LEFT_TO_RIGHT_DIRECTION":
+                            textRange.characterDirection = CharacterDirectionOptions.LEFT_TO_RIGHT_DIRECTION;
+                            break;
+                        case "RIGHT_TO_LEFT_DIRECTION":
+                            textRange.characterDirection = CharacterDirectionOptions.RIGHT_TO_LEFT_DIRECTION;
+                            break;
+                    }
+                }
+            }  
+        }
+        if (dynamicStyleMethod.search (/paragraphDirection/i) != -1) {
+            if (textRange != false && textRange != null) {
+                if (textRange.contents != "") {
+                    newStyleName = newStyleName.toUpperCase();
+                    switch(newStyleName) {
+                        case "LEFT_TO_RIGHT_DIRECTION":
+                            textRange.paragraphDirection = ParagraphDirectionOptions.LEFT_TO_RIGHT_DIRECTION;
+                            break;
+                        case "RIGHT_TO_LEFT_DIRECTION":
+                            textRange.paragraphDirection = ParagraphDirectionOptions.RIGHT_TO_LEFT_DIRECTION;
+                            break;
+                    }
+                }
+            }  
         }
         if (dynamicStyleMethod.search (/Rotate/i) != -1 || dynamicStyleMethod.search (/Shear/i) != -1) {
             if (textRange != false) {

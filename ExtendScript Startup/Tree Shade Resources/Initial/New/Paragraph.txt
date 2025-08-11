@@ -1,0 +1,9 @@
+::./<FN>/*<ASM>*:Place:\r::Body<ASM><BO>Body:Para::Replace:\n:\r:
+<div class="body" data-fi="<fi>">
+    <span class="lang en">
+        <ts><id#en/\r?\n><p><row></p></ts><ts><id_en>./<FN>/.+hdn_en.+<Place></ts>
+    </span>
+    <span class="lang ar">
+        <ts><id#ar/\r?\n><p><row></p></ts><ts><id_ar>./<FN>/.+hdn_ar.+<Place></ts>
+    </span>
+</div>

@@ -1,0 +1,7 @@
+::./<FN>/*<ASM>*:Place:\r::CodeCaption<ASM><BO>CodeCaption:Para:
+    <span class="lang en">
+        <ts>./<FN>/.+hdn_en.+<Place></ts>
+    </span>
+    <span class="lang ar">
+        <ts>./<FN>/.+hdn_ar.+<Place></ts>
+    </span>
