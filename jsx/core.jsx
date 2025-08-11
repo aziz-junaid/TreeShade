@@ -1,7 +1,7 @@
 ﻿//Tree Shade - Javascript for Adobe InDesign
 //dulajun@gmail.com
 //Tel.: +966508018243
-var copyNumber = "9.3.6";
+var copyNumber = "9.3.7";
 var tsClientID = "";
 var userID = "null";
 var userName = "unknown";

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<ExtensionManifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ExtensionBundleId="com.treeshade" ExtensionBundleVersion="9.3.6" Version="7.0"> <!-- MAJOR-VERSION-UPDATE-MARKER -->
+<ExtensionManifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ExtensionBundleId="com.treeshade" ExtensionBundleVersion="9.3.7" Version="7.0"> <!-- MAJOR-VERSION-UPDATE-MARKER -->
     <ExtensionList>
-        <Extension Id="treeshade" Version="9.3.6"/>  
+        <Extension Id="treeshade" Version="9.3.7"/>  
 			
     </ExtensionList>
     <ExecutionEnvironment>
